@@ -6,7 +6,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten"
 )
 
 const (

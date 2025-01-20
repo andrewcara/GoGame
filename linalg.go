@@ -1,69 +1,72 @@
 package main
 
-import "math"
+import (
+	"math"
+)
 
-// Point represents a 2D point with x and y coordinates
-
-// Vector represents a 2D vector defined by two points
+// Vector represents a 2D vector with x and y components
 type Vector struct {
-	Start Point
-	End   Point
+	X, Y float64
 }
 
-// NewVector creates a new vector from two points
+type Vec3 struct {
+	X, Y, Z float64
+}
+
+// NewVector creates a new vector with given x and y components
 func NewVector(start, end Point) Vector {
 	return Vector{
-		Start: start,
-		End:   end,
+		X: end.X - start.X,
+		Y: end.Y - start.Y,
 	}
 }
 
-// ToComponents converts a vector to its x and y components
-func (v Vector) ToComponents() (float64, float64) {
-	return v.End.x - v.Start.x, v.End.y - v.Start.y
+// Add returns the sum of two vectors
+func (v Vector) Add(other Vector) Vector {
+	return Vector{
+		X: v.X + other.X,
+		Y: v.Y + other.Y,
+	}
+}
+
+// Subtract returns the difference between two vectors
+func (v Vector) Subtract(other Vector) Vector {
+	return Vector{
+		X: v.X - other.X,
+		Y: v.Y - other.Y,
+	}
+}
+
+// Scale multiplies the vector by a scalar value
+func (v Vector) Scale(scalar float64) Vector {
+	return Vector{
+		X: v.X * scalar,
+		Y: v.Y * scalar,
+	}
 }
 
 // DotProduct calculates the dot product of two vectors
 func DotProduct(v1, v2 Vector) float64 {
-	// Convert vectors to component form
-	x1, y1 := v1.ToComponents()
-	x2, y2 := v2.ToComponents()
-
-	// Dot product = x1*x2 + y1*y2
-	return x1*x2 + y1*y2
+	return v1.X*v2.X + v1.Y*v2.Y
 }
 
 // CrossProduct calculates the magnitude of the cross product of two 2D vectors
 // Note: In 2D, cross product gives a scalar value representing the area of the parallelogram
-// formed by the two vectors
-func CrossProduct(v1, v2 Vector) float64 {
-	// Convert vectors to component form
-	x1, y1 := v1.ToComponents()
-	x2, y2 := v2.ToComponents()
-
-	// Cross product in 2D = x1*y2 - y1*x2
-	return x1*y2 - y1*x2
-}
 
 // Magnitude calculates the length of the vector
 func (v Vector) Magnitude() float64 {
-	x, y := v.ToComponents()
-	return math.Sqrt(x*x + y*y)
+	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
 
+// Normalize returns a unit vector in the same direction
 func (v Vector) Normalize() Vector {
 	mag := v.Magnitude()
 	if mag == 0 {
 		return v // Return original vector if magnitude is 0
 	}
-
-	x, y := v.ToComponents()
 	return Vector{
-		Start: v.Start,
-		End: Point{
-			x: v.Start.x + (x / mag),
-			y: v.Start.y + (y / mag),
-		},
+		X: v.X / mag,
+		Y: v.Y / mag,
 	}
 }
 
@@ -86,4 +89,59 @@ func Angle(v1, v2 Vector) float64 {
 	}
 
 	return math.Acos(cos)
+}
+
+func CrossProduct2D(u, v Vector) float64 {
+	return (u.X * v.Y) - (u.Y * v.X)
+}
+func CrossProduct3D(a, b Vec3) Vec3 {
+	return Vec3{
+		X: a.Y*b.Z - a.Z*b.Y,
+		Y: a.Z*b.X - a.X*b.Z,
+		Z: a.X*b.Y - a.Y*b.X,
+	}
+}
+
+// TripleCrossProduct2D calculates (a × b) × a for two 2D vectors
+func TripleCrossProduct3D(a, b, c Vector) Vector {
+	// Convert 2D vectors to 3D (set z=0).
+	A := Vec3{a.X, a.Y, 0}
+	B := Vec3{b.X, b.Y, 0}
+	C := Vec3{c.X, c.Y, 0}
+
+	// First cross product: A × B
+	first := CrossProduct3D(A, B)
+
+	// Second cross product: (A × B) × C
+	second := CrossProduct3D(first, C)
+
+	// Return the x and y components as a Vec2
+	return Vector{second.X, second.Y}
+}
+
+// Additional useful methods
+
+// Perpendicular returns a vector rotated 90 degrees counterclockwise
+func (v Vector) Perpendicular() Vector {
+	return Vector{
+		X: -v.Y,
+		Y: v.X,
+	}
+}
+
+// Project returns the projection of this vector onto another vector
+func (v Vector) Project(onto Vector) Vector {
+	dot := DotProduct(v, onto)
+	mag2 := DotProduct(onto, onto)
+	if mag2 == 0 {
+		return Vector{0, 0}
+	}
+	scale := dot / mag2
+	return onto.Scale(scale)
+}
+
+// Reflect returns the reflection of this vector across another vector
+func (v Vector) Reflect(across Vector) Vector {
+	proj := v.Project(across)
+	return proj.Scale(2).Subtract(v)
 }
