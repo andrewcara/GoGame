@@ -26,9 +26,10 @@ func main() {
 
 	// Create Square to test furthest point
 
-	square := Polygon{Center: Point{0, 0}, Vertices: []Point{{2, 2}, {-2, -2}, {-2, 2}, {2, -2}}}
+	//square1 := Polygon{Center: Point{0, 0}, Vertices: []Point{{2, 2}, {-2, -2}, {-2, 2}, {2, -2}}}
+	square1 := Polygon{Center: Point{-2, -2}, Vertices: []Point{{-2.9, -2.9}, {-3, -1}, {-1, -1}, {-1, -3}}}
 
 	square2 := Polygon{Center: Point{-4, -4}, Vertices: []Point{{-5, -5}, {-5, -3}, {-3, -5}, {-3, -3}}}
-
-	fmt.Println((GJK(&square, &square2)))
+	//circle := Circle{Center: Point{4, 4}, Radius: 2}
+	fmt.Println((GJK(&square1, &square2)))
 }

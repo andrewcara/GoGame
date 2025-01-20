@@ -97,7 +97,7 @@ func CrossProduct2D(u, v Vector) float64 {
 func CrossProduct3D(a, b Vec3) Vec3 {
 	return Vec3{
 		X: a.Y*b.Z - a.Z*b.Y,
-		Y: a.Z*b.X - a.X*b.Z,
+		Y: (a.Z*b.X - a.X*b.Z),
 		Z: a.X*b.Y - a.Y*b.X,
 	}
 }
