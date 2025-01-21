@@ -12,10 +12,12 @@ var Origin = Point{0, 0}
 func GJK(s1 Shape, s2 Shape) bool {
 
 	simplex := Simplex{make([]Point, 0)}
-	//direction
+	//Initial direction decided as the vector between the center of two shapes
 	direction_vector := NewVector(s1.GetCenter(), s2.GetCenter())
 	support_point := Support(s1, s2, direction_vector)
 	simplex.Values = append(simplex.Values, support_point)
+
+	//We then find a
 	direction_vector = NewVector(simplex.Values[0], Origin)
 
 	for {

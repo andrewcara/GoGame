@@ -18,12 +18,16 @@ func (p *Point) Multiply(p2 Point) Point {
 type Shape interface {
 	FurthestPoint(Vector) Point
 	GetCenter() Point
+	//Where we are passing in the dimensions of the screen into the update function
+	UpdateKinematics(int, int, float64)
 }
 
 type Polygon struct {
 	Shape
 	Center   Point
 	Vertices []Point
+	VelX     float64
+	VelY     float64
 }
 
 // Find the Point that is the furthest from the Center given a directional vector
@@ -53,6 +57,8 @@ type Circle struct {
 	Shape
 	Center Point
 	Radius float64
+	VelX   float64
+	VelY   float64
 }
 
 func (c *Circle) FurthestPoint(direction_vector Vector) Point {
@@ -63,4 +69,30 @@ func (c *Circle) FurthestPoint(direction_vector Vector) Point {
 
 func (c *Circle) GetCenter() Point {
 	return c.Center
+}
+
+func (c *Circle) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64) {
+
+	c.Center.X += c.VelX * timeDelta
+	c.Center.Y += c.VelY * timeDelta
+	maxX := float64(screenWidth) - c.Radius
+	maxY := float64(screenHeight) - c.Radius
+
+	if (c.Center.X) >= float64(screenWidth)-(c.Radius) || c.Center.X <= c.Radius {
+		if c.Center.X > maxX {
+			c.Center.X = maxX
+		} else if c.Center.X < c.Radius {
+			c.Center.X = c.Radius
+		}
+		c.VelX *= -1
+	}
+	if (c.Center.Y) >= float64(screenWidth)-(c.Radius) || c.Center.Y <= c.Radius {
+		if c.Center.Y > maxY {
+			c.Center.Y = maxY
+		} else if c.Center.Y < c.Radius {
+			c.Center.Y = c.Radius
+		}
+		c.VelY *= -1
+	}
+
 }
