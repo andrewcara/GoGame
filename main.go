@@ -1,6 +1,9 @@
 package main
 
 import (
+	linalg "HeadSoccer/math/helper"
+	"HeadSoccer/math/physics"
+	"HeadSoccer/shapes"
 	"fmt"
 	"image/color"
 	"log"
@@ -11,9 +14,12 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+type Circle = shapes.Circle
+type Point = linalg.Point
+
 var (
-	ball      = Circle{Center: Point{10, 10}, Radius: 15, VelX: float64(0.00000006), VelY: float64(0.00000004)}
-	ball2     = Circle{Center: Point{20, 20}, Radius: 20, VelX: float64(0.00000004), VelY: float64(0.00000002)}
+	ball      = Circle{Center: Point{X: 10, Y: 10}, Radius: 15}
+	ball2     = Circle{Center: Point{X: 20, Y: 20}, Radius: 20}
 	loop_iter = 0
 
 	prevUpdateTime = time.Now()
@@ -36,14 +42,15 @@ func (g *Game) Update() error {
 	timeDelta := float64(time.Since(prevUpdateTime))
 	prevUpdateTime = time.Now()
 
-	if GJK(&ball, &ball2) {
+	if physics.GJK(&ball, &ball2) {
 		g.Collision = true
 	} else {
 		g.Collision = false
 	}
+	println(timeDelta)
 
-	ball.UpdateKinematics(screenWidth, screenHeight, timeDelta)
-	ball2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+	// ball.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+	// ball2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
 	return nil
 }
 
@@ -63,14 +70,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func main() {
-
-	// Create Square to test furthest point
-	//square1 := Polygon{Center: Point{0, 0}, Vertices: []Point{{2, 2}, {-2, -2}, {-2, 2}, {2, -2}}}
-	// square1 := Polygon{Center: Point{-2, -2}, Vertices: []Point{{-2.9, -2.9}, {-3, -1}, {-1, -1}, {-1, -3}}}
-
-	// square2 := Polygon{Center: Point{-4, -4}, Vertices: []Point{{-5, -5}, {-5, -3}, {-3, -5}, {-3, -3}}}
-	// //circle := Circle{Center: Point{4, 4}, Radius: 2}
-	// fmt.Println((GJK(&square1, &square2)))
 
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Ebiten Test")

@@ -1,8 +1,11 @@
-package main
+package linalg
 
 import (
+	"HeadSoccer/math/helper/point"
 	"math"
 )
+
+type Point = point.Point
 
 // Vector represents a 2D vector with x and y components
 type Vector struct {

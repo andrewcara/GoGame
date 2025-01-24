@@ -1,29 +1,36 @@
-package main
+package physics
 
-type Status int
+import (
+	linalg "HeadSoccer/math/helper"
+	"HeadSoccer/math/helper/point"
+	"HeadSoccer/shapes"
+)
+
+type Point = point.Point
+type Shape = shapes.Shape
 
 type Simplex struct {
 	Values []Point
 }
 
 // GJK function detects if two shapes collide
-var Origin = Point{0, 0}
+var Origin = Point{X: 0, Y: 0}
 
 func GJK(s1 Shape, s2 Shape) bool {
 
 	simplex := Simplex{make([]Point, 0)}
 	//Initial direction decided as the vector between the center of two shapes
-	direction_vector := NewVector(s1.GetCenter(), s2.GetCenter())
+	direction_vector := linalg.NewVector(s1.GetCenter(), s2.GetCenter())
 	support_point := Support(s1, s2, direction_vector)
 	simplex.Values = append(simplex.Values, support_point)
 
 	//We then find a
-	direction_vector = NewVector(simplex.Values[0], Origin)
+	direction_vector = linalg.NewVector(simplex.Values[0], Origin)
 
 	for {
 		support_point = Support(s1, s2, direction_vector)
 		result := simplex.EvolveSimples(s1, s2, &direction_vector)
-		if DotProduct(NewVector(Origin, support_point), direction_vector) < 0 {
+		if linalg.DotProduct(linalg.NewVector(Origin, support_point), direction_vector) < 0 {
 			return false
 		}
 		simplex.Values = append(simplex.Values, support_point)
@@ -34,16 +41,16 @@ func GJK(s1 Shape, s2 Shape) bool {
 	}
 }
 
-func (s *Simplex) EvolveSimples(s1 Shape, s2 Shape, d *Vector) bool {
+func (s *Simplex) EvolveSimples(s1 Shape, s2 Shape, d *linalg.Vector) bool {
 
 	switch len(s.Values) {
 	case 2:
 		B := s.Values[0]
 		A := s.Values[1]
 
-		ab := NewVector(A, B)
-		a0 := NewVector(A, Origin)
-		*d = TripleCrossProduct3D(ab, a0, ab)
+		ab := linalg.NewVector(A, B)
+		a0 := linalg.NewVector(A, Origin)
+		*d = linalg.TripleCrossProduct3D(ab, a0, ab)
 		return false
 
 	case 3:
@@ -51,19 +58,19 @@ func (s *Simplex) EvolveSimples(s1 Shape, s2 Shape, d *Vector) bool {
 		B := s.Values[1]
 		C := s.Values[0]
 
-		a0 := NewVector(A, Origin) // Vector from A to origin
-		ab := NewVector(A, B)
-		ac := NewVector(A, C)
+		a0 := linalg.NewVector(A, Origin) // Vector from A to origin
+		ab := linalg.NewVector(A, B)
+		ac := linalg.NewVector(A, C)
 
-		abPerp := TripleCrossProduct3D(ac, ab, ab)
-		acPerp := TripleCrossProduct3D(ab, ac, ac)
+		abPerp := linalg.TripleCrossProduct3D(ac, ab, ab)
+		acPerp := linalg.TripleCrossProduct3D(ab, ac, ac)
 
-		if DotProduct(abPerp, a0) > 0 {
+		if linalg.DotProduct(abPerp, a0) > 0 {
 			s.Values = append(s.Values[:0], s.Values[1:]...)
 			*d = abPerp
 			return false
 
-		} else if DotProduct(acPerp, a0) > 0 {
+		} else if linalg.DotProduct(acPerp, a0) > 0 {
 			s.Values = append(s.Values[:1], s.Values[2:]...)
 			*d = acPerp
 			return false
@@ -76,7 +83,7 @@ func (s *Simplex) EvolveSimples(s1 Shape, s2 Shape, d *Vector) bool {
 	return false
 }
 
-func Support(s1, s2 Shape, d Vector) Point {
+func Support(s1, s2 Shape, d linalg.Vector) Point {
 	s1_furth_p := s1.FurthestPoint(d)
 	s2_furth_p := s2.FurthestPoint(d.Scale(-1))
 	//fmt.Println(s1_furth_p, s2_furth_p)
