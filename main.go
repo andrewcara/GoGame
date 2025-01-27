@@ -14,12 +14,9 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
-type Circle = shapes.Circle
-type Point = linalg.Point
-
 var (
-	ball      = Circle{Center: Point{X: 10, Y: 10}, Radius: 15}
-	ball2     = Circle{Center: Point{X: 20, Y: 20}, Radius: 20}
+	ball      = shapes.Circle{Center: linalg.Point{X: 10, Y: 10}, Radius: 15, Velocity: linalg.Vector{X: float64(0.000000006), Y: float64(0.00000008)}}
+	ball2     = shapes.Circle{Center: linalg.Point{X: 20, Y: 20}, Radius: 20, Velocity: linalg.Vector{X: float64(0.000000006), Y: float64(0.00000008)}}
 	loop_iter = 0
 
 	prevUpdateTime = time.Now()
@@ -42,15 +39,14 @@ func (g *Game) Update() error {
 	timeDelta := float64(time.Since(prevUpdateTime))
 	prevUpdateTime = time.Now()
 
+	ball.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+
 	if physics.GJK(&ball, &ball2) {
 		g.Collision = true
 	} else {
 		g.Collision = false
 	}
-	println(timeDelta)
-
-	// ball.UpdateKinematics(screenWidth, screenHeight, timeDelta)
-	// ball2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+	ball2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
 	return nil
 }
 

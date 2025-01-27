@@ -16,5 +16,5 @@ type Shape interface {
 	//Where we are passing in the dimensions of the screen into the update function
 
 	//TO-DO on implementation
-	//UpdateKinematics(int, int, float64)
+	UpdateKinematics(int, int, float64)
 }
