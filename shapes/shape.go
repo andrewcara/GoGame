@@ -12,6 +12,9 @@ type Point = point.Point
 type Shape interface {
 	FurthestPoint(linalg.Vector) Point
 	GetCenter() Point
+	GetVelocity() linalg.Vector
+	SetVelocity(linalg.Vector)
+	GetMass() float64
 
 	//Where we are passing in the dimensions of the screen into the update function
 

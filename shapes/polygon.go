@@ -2,15 +2,14 @@ package shapes
 
 import (
 	linalg "HeadSoccer/math/helper"
+	dynamics "HeadSoccer/math/helper/dynamic_properties"
 )
 
 type Polygon struct {
-	Shape
 	Center   Point
 	Vertices []Point
 	//Velocity to be implemented as a vector
-	VelX float64
-	VelY float64
+	Dynamic dynamics.DynamicProperties
 }
 
 // Find the Point that is the furthest from the Center given a directional vector
@@ -35,4 +34,16 @@ func (p *Polygon) FurthestPoint(direction_vector linalg.Vector) Point {
 
 func (p *Polygon) GetCenter() Point {
 	return p.Center
+}
+
+func (p *Polygon) GetVelocity() linalg.Vector {
+	return p.Dynamic.Velocity
+}
+
+func (p *Polygon) SetVelocity(new_velocity linalg.Vector) {
+	p.Dynamic.Velocity = new_velocity
+}
+
+func (p *Polygon) GetMass() float64 {
+	return p.Dynamic.Mass
 }
