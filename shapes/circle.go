@@ -21,6 +21,11 @@ func (c *Circle) GetCenter() Point {
 	return c.Center
 }
 
+func (c *Circle) SetCenter(point Point) {
+	c.Center.X = point.X
+	c.Center.Y = point.Y
+}
+
 func (c *Circle) GetVelocity() linalg.Vector {
 	return c.Dynamic.Velocity
 }

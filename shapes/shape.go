@@ -12,6 +12,7 @@ type Point = point.Point
 type Shape interface {
 	FurthestPoint(linalg.Vector) Point
 	GetCenter() Point
+	SetCenter(Point)
 	GetVelocity() linalg.Vector
 	SetVelocity(linalg.Vector)
 	GetMass() float64
