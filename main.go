@@ -118,7 +118,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func main() {
-
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Ebiten Test")
 	if err := ebiten.RunGame(&Game{Collision: false}); err != nil {
