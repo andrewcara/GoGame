@@ -119,9 +119,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 func main() {
 
+<<<<<<< Updated upstream
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Ebiten Test")
 	if err := ebiten.RunGame(&Game{Collision: false}); err != nil {
 		log.Fatal(err)
 	}
+=======
+	// Create Square to test furthest point
+
+	square := Polygon{Center: Point{2.5, 2.5}, Vertices: []Point{{0, 5}, {5, 5}, {5, 0}, {0, 0}}}
+
+	//square2 := Polygon{Center: Point{-4, -4}, Vertices: []Point{{-5, -5}, {-5, -3}, {-3, -5}, {-3, -3}}}
+	circle := Circle{Center: Point{10, 10}, Radius: 2}
+	fmt.Println((GJK(&square, &circle)))
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 }
