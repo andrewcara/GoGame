@@ -3,7 +3,6 @@ package main
 import (
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
-	"fmt"
 
 	"HeadSoccer/math/physics"
 	"HeadSoccer/shapes"
@@ -129,7 +128,6 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 			} else {
 				g.Collision = false
 			}
-			fmt.Println(obj1.GetMass(), obj2.GetMass())
 			obj1.UpdateKinematics(screenWidth, screenHeight, timeDelta)
 			obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
 		}
