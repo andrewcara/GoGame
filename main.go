@@ -3,6 +3,7 @@ package main
 import (
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
+	"fmt"
 
 	"HeadSoccer/math/physics"
 	"HeadSoccer/shapes"
@@ -12,7 +13,6 @@ import (
 
 	//"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 var gravity = linalg.Vector{X: 0, Y: -9.81}
@@ -32,6 +32,7 @@ var (
 			Mass:       1.0,
 			Accelation: gravity, // Example mass
 		}}
+
 	loop_iter = 0
 
 	prevUpdateTime = time.Now()
@@ -46,18 +47,51 @@ const (
 )
 
 type Game struct {
-	physics.PhyicsWorld
+	world          physics.PhysicsWorld
 	Collision      bool
 	accumulator    float64
 	lastUpdateTime time.Time
 }
 
 func NewGame() *Game {
-	return &Game{
+
+	initialCenter := linalg.Point{X: 125, Y: 125}
+	vertices := []linalg.Point{
+		{X: 150, Y: 100},
+		{X: 150, Y: 150},
+		{X: 100, Y: 150},
+		{X: 100, Y: 100},
+	}
+
+	dynamicProps := dynamics.DynamicProperties{
+		Velocity: linalg.Vector{X: 50, Y: 30},
+		Force:    linalg.Vector{X: 0, Y: -9.8}, // Example gravity force
+		Mass:     5.0,
+	}
+
+	var polygon shapes.Polygon
+	polygon.Initialize(initialCenter, vertices, dynamicProps)
+
+	world := physics.PhysicsWorld{
+		Objects: make([]shapes.Shape, 0),
+		Gravity: gravity,
+	}
+
+	game := &Game{
+		world:          world,
 		Collision:      false,
 		lastUpdateTime: time.Now(),
 		accumulator:    0,
 	}
+
+	// Wrap shapes in PhysicsObjects
+	game.world.Objects = append(game.world.Objects,
+		&ball,
+		&ball2,
+		&polygon,
+	)
+
+	return game
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -85,42 +119,38 @@ func (g *Game) Update() error {
 }
 
 func (g *Game) UpdatePhysics(timeDelta float64) {
-	temp_ball := physics.PhysicsObject{Shape: &ball}
-	temp_ball2 := physics.PhysicsObject{Shape: &ball2}
-	coll := physics.CollsionHandler{Collider: temp_ball}
+	for i := 0; i < len(g.world.Objects); i++ {
+		for j := i + 1; j < len(g.world.Objects); j++ {
+			obj1 := g.world.Objects[i]
+			obj2 := g.world.Objects[j]
 
-	// Set gravity and forces to 0 for now
-	// Check collision before updating positions
-	if coll.HitsOtherObject(&temp_ball2) {
-		g.Collision = true
-
-		// // Move balls apart slightly to prevent stickin
-	} else {
-		g.Collision = false
-
+			if physics.HitsOtherObject(&obj1, &obj2) {
+				g.Collision = true
+			} else {
+				g.Collision = false
+			}
+			fmt.Println(obj1.GetMass(), obj2.GetMass())
+			obj1.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+			obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+		}
 	}
-	ball.UpdateKinematics(screenWidth, screenHeight, timeDelta)
-	ball2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
 }
 
 // Update positions
 
 func (g *Game) Draw(screen *ebiten.Image) {
-
-	vector.DrawFilledCircle(screen, float32(ball.Center.X), float32(ball.Center.Y), float32(ball.Radius), color.RGBA{200, 150, 3, 255}, false)
-	vector.DrawFilledCircle(screen, float32(ball2.Center.X), float32(ball2.Center.Y), float32(ball2.Radius), color.RGBA{200, 150, 3, 255}, false)
-	//fmt.Println("collision!!!!", loop_iter)
-
-	// vector.DrawFilledCircle(screen, float32(ball.Center.X), float32(ball.Center.Y), float32(ball.Radius), color.RGBA{255, 20, 3, 255}, false)
-	// vector.DrawFilledCircle(screen, float32(ball2.Center.X), float32(ball2.Center.Y), float32(ball2.Radius), color.RGBA{255, 20, 3, 255}, false)
-
-	return
+	color := color.RGBA{200, 150, 3, 255}
+	for _, obj := range g.world.Objects {
+		obj.DrawShape(screen, color)
+	}
 }
 
 func main() {
+	game := NewGame()
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
 	ebiten.SetWindowTitle("Ebiten Test")
-	if err := ebiten.RunGame(&Game{Collision: false}); err != nil {
+	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
+
 }

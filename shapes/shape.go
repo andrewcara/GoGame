@@ -3,6 +3,9 @@ package shapes
 import (
 	linalg "HeadSoccer/math/helper"
 	"HeadSoccer/math/helper/point"
+	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Point = point.Point
@@ -16,9 +19,9 @@ type Shape interface {
 	GetVelocity() linalg.Vector
 	SetVelocity(linalg.Vector)
 	GetMass() float64
-
+	GetSurfacePoint(direction_vector linalg.Vector) Point
+	DrawShape(*ebiten.Image, color.RGBA)
 	//Where we are passing in the dimensions of the screen into the update function
-
 	//TO-DO on implementation
 	UpdateKinematics(int, int, float64)
 }

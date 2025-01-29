@@ -3,6 +3,10 @@ package shapes
 import (
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
+	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 type Circle struct {
@@ -22,8 +26,7 @@ func (c *Circle) GetCenter() Point {
 }
 
 func (c *Circle) SetCenter(point Point) {
-	c.Center.X = point.X
-	c.Center.Y = point.Y
+	c.Center = point
 }
 
 func (c *Circle) GetVelocity() linalg.Vector {
@@ -36,6 +39,11 @@ func (c *Circle) SetVelocity(new_velocity linalg.Vector) {
 
 func (c *Circle) GetMass() float64 {
 	return c.Dynamic.Mass
+}
+func (c *Circle) GetSurfacePoint(direction_vector linalg.Vector) Point {
+	normalized_vec := direction_vector.Normalize()
+	scaled_vec := normalized_vec.Scale(c.Radius)
+	return Point{X: c.Center.X + scaled_vec.X, Y: c.Center.Y + scaled_vec.Y}
 }
 
 func (c *Circle) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64) {
@@ -61,5 +69,10 @@ func (c *Circle) UpdateKinematics(screenWidth, screenHeight int, timeDelta float
 		}
 		c.Dynamic.Velocity.Y *= -1
 	}
+
+}
+
+func (c *Circle) DrawShape(screen *ebiten.Image, color color.RGBA) {
+	vector.DrawFilledCircle(screen, float32(c.Center.X), float32(c.Center.Y), float32(c.Radius), color, false)
 
 }

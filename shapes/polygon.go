@@ -3,11 +3,16 @@ package shapes
 import (
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
+	"image/color"
+	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Polygon struct {
 	Center   Point
 	Vertices []Point
+	Offsets  []Point
 	//Velocity to be implemented as a vector
 	Dynamic dynamics.DynamicProperties
 }
@@ -32,8 +37,77 @@ func (p *Polygon) FurthestPoint(direction_vector linalg.Vector) Point {
 	return maximum_point
 }
 
+func (p *Polygon) updateVertices() {
+	for i, offset := range p.Offsets {
+		p.Vertices[i] = Point{
+			X: p.Center.X + offset.X,
+			Y: p.Center.Y + offset.Y,
+		}
+	}
+}
+
+func (p *Polygon) Initialize(center Point, vertices []Point, dynamicProperties dynamics.DynamicProperties) {
+	p.Center = center
+	p.Vertices = vertices
+	p.calculateOffsets()          // Calculate the offsets based on the initial vertices
+	p.Dynamic = dynamicProperties // Set dynamic properties
+}
+
+func (p *Polygon) calculateOffsets() {
+	p.Offsets = make([]Point, len(p.Vertices)) // Exclude the center
+	for i, vertex := range p.Vertices {
+		// Subtract the center from each vertex to calculate the offset
+		p.Offsets[i] = Point{X: vertex.X - p.Center.X, Y: vertex.Y - p.Center.Y}
+	}
+}
+
+func (p *Polygon) GetSurfacePoint(direction_vector linalg.Vector) Point {
+	// First get furthest point in this direction as a starting point
+	maxPoint := p.FurthestPoint(direction_vector)
+	maxDist := linalg.DotProduct(direction_vector, linalg.NewVector(p.Center, maxPoint))
+
+	// Check each edge to see if collision point lies between vertices
+	for i := 0; i < len(p.Vertices); i++ {
+		v1 := p.Vertices[i]
+		v2 := p.Vertices[(i+1)%len(p.Vertices)]
+
+		// Get edge vector
+		edge := linalg.NewVector(v1, v2)
+
+		// If edge is perpendicular to direction vector, it might contain contact point
+		edgeNormal := linalg.Vector{X: -edge.Y, Y: edge.X}.Normalize()
+		if linalg.DotProduct(edgeNormal, direction_vector) > 0 {
+			// Project direction onto edge to find potential contact point
+			t := linalg.DotProduct(direction_vector, edge) / linalg.DotProduct(edge, edge)
+
+			// If projection lies between vertices (0 <= t <= 1)
+			if t >= 0 && t <= 1 {
+				contactPoint := Point{
+					X: v1.X + edge.X*t,
+					Y: v1.Y + edge.Y*t,
+				}
+
+				// Check if this point is further in the direction vector
+				dist := linalg.DotProduct(direction_vector, linalg.NewVector(p.Center, contactPoint))
+				if dist > maxDist {
+					maxDist = dist
+					maxPoint = contactPoint
+				}
+			}
+		}
+	}
+
+	return maxPoint
+}
+
 func (p *Polygon) GetCenter() Point {
+	p.updateVertices()
 	return p.Center
+}
+
+func (p *Polygon) SetCenter(point Point) {
+	p.updateVertices()
+	p.Center = point
 }
 
 func (p *Polygon) GetVelocity() linalg.Vector {
@@ -46,4 +120,126 @@ func (p *Polygon) SetVelocity(new_velocity linalg.Vector) {
 
 func (p *Polygon) GetMass() float64 {
 	return p.Dynamic.Mass
+}
+
+func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
+	for i := 0; i < len(p.Vertices); i++ {
+		v1 := p.Vertices[i]
+		v2 := p.Vertices[(i+1)%len(p.Vertices)]
+		drawLine(screen, v1, v2, color)
+	}
+}
+
+func drawLine(screen *ebiten.Image, p1, p2 Point, clr color.Color) {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+	steps := math.Max(math.Abs(dx), math.Abs(dy))
+
+	if steps == 0 {
+		screen.Set(int(p1.X), int(p1.Y), clr)
+		return
+	}
+
+	xIncrement := dx / steps
+	yIncrement := dy / steps
+
+	x := p1.X
+	y := p1.Y
+	for i := float64(0); i <= steps; i++ {
+		screen.Set(int(math.Round(x)), int(math.Round(y)), clr)
+		x += xIncrement
+		y += yIncrement
+	}
+}
+
+func (p *Polygon) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64) {
+	// Apply velocity to position
+	newCenterX := p.Center.X + p.Dynamic.Velocity.X*timeDelta
+	newCenterY := p.Center.Y + p.Dynamic.Velocity.Y*timeDelta
+
+	// Temporarily update center to check boundary collisions
+
+	p.Center = Point{X: newCenterX, Y: newCenterY}
+	p.updateVertices()
+
+	// Check and handle boundary collisions
+	boundary := p.GetBoundaryPoints()
+	collisionOccurred := false
+
+	// Right boundary
+	if boundary.MaxX >= float64(screenWidth) {
+		overlap := boundary.MaxX - float64(screenWidth)
+		p.Center.X -= overlap
+		p.Dynamic.Velocity.X = -math.Abs(p.Dynamic.Velocity.X)
+		collisionOccurred = true
+	}
+
+	// Left boundary
+	if boundary.MinX <= 0 {
+		p.Center.X -= boundary.MinX
+		p.Dynamic.Velocity.X = math.Abs(p.Dynamic.Velocity.X)
+		collisionOccurred = true
+	}
+
+	// Bottom boundary
+	if boundary.MaxY >= float64(screenHeight) {
+		overlap := boundary.MaxY - float64(screenHeight)
+		p.Center.Y -= overlap
+		p.Dynamic.Velocity.Y = -math.Abs(p.Dynamic.Velocity.Y)
+		collisionOccurred = true
+	}
+
+	// Top boundary
+	if boundary.MinY <= 0 {
+		p.Center.Y -= boundary.MinY
+		p.Dynamic.Velocity.Y = math.Abs(p.Dynamic.Velocity.Y)
+		collisionOccurred = true
+	}
+
+	// If no collision occurred, keep the new position
+	if !collisionOccurred {
+		p.Center = Point{X: newCenterX, Y: newCenterY}
+	}
+
+	// // Apply gravity if enabled
+	// if p.Dynamic.UseGravity {
+	//     p.Dynamic.Velocity.Y += p.Dynamic.Gravity * timeDelta
+	// }
+
+	// // Apply drag/air resistance
+	// p.Dynamic.Velocity.X *= (1.0 - p.Dynamic.Drag * timeDelta)
+	// p.Dynamic.Velocity.Y *= (1.0 - p.Dynamic.Drag * timeDelta)
+
+	// Update vertices to match new center position
+	p.updateVertices()
+}
+
+type BoundaryPoints struct {
+	MinX, MaxX, MinY, MaxY float64
+}
+
+// GetBoundaryPoints returns the extreme points of the polygon
+func (p *Polygon) GetBoundaryPoints() BoundaryPoints {
+	if len(p.Vertices) == 0 {
+		return BoundaryPoints{}
+	}
+
+	minX := p.Vertices[0].X
+	maxX := p.Vertices[0].X
+	minY := p.Vertices[0].Y
+	maxY := p.Vertices[0].Y
+
+	for _, vertex := range p.Vertices[1:] {
+		minX = math.Min(minX, vertex.X)
+		maxX = math.Max(maxX, vertex.X)
+		minY = math.Min(minY, vertex.Y)
+		maxY = math.Max(maxY, vertex.Y)
+	}
+
+	return BoundaryPoints{
+		MinX: minX,
+		MaxX: maxX,
+		MinY: minY,
+		MaxY: maxY,
+	}
 }
