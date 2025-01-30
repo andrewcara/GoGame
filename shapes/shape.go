@@ -22,6 +22,5 @@ type Shape interface {
 	GetSurfacePoint(direction_vector linalg.Vector) Point
 	DrawShape(*ebiten.Image, color.RGBA)
 	//Where we are passing in the dimensions of the screen into the update function
-	//TO-DO on implementation
-	UpdateKinematics(int, int, float64)
+	UpdateKinematics(int, int, float64, linalg.Vector)
 }

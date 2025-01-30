@@ -14,28 +14,8 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
-var gravity = linalg.Vector{X: 0, Y: -9.81}
-
-var (
-	ball = shapes.Circle{Center: linalg.Point{X: 100, Y: 30}, Radius: 15,
-		Dynamic: dynamics.DynamicProperties{
-			Velocity:   linalg.Vector{X: float64(150), Y: float64(0.00000006)}, // Example velocity
-			Force:      linalg.Vector{X: 0, Y: -9.8},                           // Gravity force
-			Mass:       1.0,
-			Accelation: gravity, // Example mass
-		}}
-	ball2 = shapes.Circle{Center: linalg.Point{X: 20, Y: 20}, Radius: 20,
-		Dynamic: dynamics.DynamicProperties{
-			Velocity:   linalg.Vector{X: float64(160), Y: float64(0.00000006)}, // Example velocity
-			Force:      linalg.Vector{X: 0, Y: -9.8},                           // Gravity force
-			Mass:       1.0,
-			Accelation: gravity, // Example mass
-		}}
-
-	loop_iter = 0
-
-	prevUpdateTime = time.Now()
-)
+// Gravity is positve since "down" on the screen is positive and up is negative
+var gravity = linalg.Vector{X: 0, Y: 98.81}
 
 const (
 	physicsTickRate = 1.0 / 100
@@ -54,22 +34,59 @@ type Game struct {
 
 func NewGame() *Game {
 
-	initialCenter := linalg.Point{X: 125, Y: 125}
+	ball := shapes.Circle{Center: linalg.Point{X: 100, Y: 30}, Radius: 15,
+		Dynamic: dynamics.DynamicProperties{
+			Velocity:   linalg.Vector{X: float64(150), Y: float64(100)}, // Example velocity
+			Force:      linalg.Vector{X: 0, Y: -9.8},                    // Gravity force
+			Mass:       1.0,
+			Accelation: gravity, // Example mass
+		}}
+	ball2 := shapes.Circle{Center: linalg.Point{X: 20, Y: 20}, Radius: 20,
+		Dynamic: dynamics.DynamicProperties{
+			Velocity:   linalg.Vector{X: float64(260), Y: float64(-100)}, // Example velocity
+			Force:      linalg.Vector{X: 0, Y: -9.8},                     // Gravity force
+			Mass:       1.0,
+			Accelation: gravity, // Example mass
+		}}
+
+	_ = ball
+	initialCenter := linalg.Point{X: 100, Y: 100}
 	vertices := []linalg.Point{
+		{X: 130, Y: 130},
 		{X: 150, Y: 100},
-		{X: 150, Y: 150},
-		{X: 100, Y: 150},
-		{X: 100, Y: 100},
+		{X: 140, Y: 70},
+		{X: 110, Y: 50},
+		{X: 80, Y: 60},
+		{X: 60, Y: 90},
+		{X: 70, Y: 120},
+		{X: 100, Y: 140},
+		{X: 120, Y: 150},
+	}
+	dynamicProps := dynamics.DynamicProperties{
+		Velocity: linalg.Vector{X: 20, Y: 15},
+		Force:    linalg.Vector{X: 0, Y: -9.8}, // Example gravity force
+		Mass:     10.0,
 	}
 
-	dynamicProps := dynamics.DynamicProperties{
+	var polygon shapes.Polygon
+	polygon.Initialize(initialCenter, vertices, dynamicProps)
+
+	initialCenter2 := linalg.Point{X: 50, Y: 50}
+	vertices2 := []linalg.Point{
+		{X: 75, Y: 75},
+		{X: 75, Y: 25},
+		{X: 25, Y: 25},
+		{X: 25, Y: 75},
+	}
+
+	dynamicProps2 := dynamics.DynamicProperties{
 		Velocity: linalg.Vector{X: 50, Y: 30},
 		Force:    linalg.Vector{X: 0, Y: -9.8}, // Example gravity force
 		Mass:     5.0,
 	}
 
-	var polygon shapes.Polygon
-	polygon.Initialize(initialCenter, vertices, dynamicProps)
+	var polygon2 shapes.Polygon
+	polygon2.Initialize(initialCenter2, vertices2, dynamicProps2)
 
 	world := physics.PhysicsWorld{
 		Objects: make([]shapes.Shape, 0),
@@ -83,11 +100,12 @@ func NewGame() *Game {
 		accumulator:    0,
 	}
 
-	// Wrap shapes in PhysicsObjects
+	// Add Physic Objects to Game
 	game.world.Objects = append(game.world.Objects,
 		&ball,
 		&ball2,
 		&polygon,
+		&polygon2,
 	)
 
 	return game
@@ -117,6 +135,8 @@ func (g *Game) Update() error {
 	return nil
 }
 
+//Current implementation is that there must be two objects
+
 func (g *Game) UpdatePhysics(timeDelta float64) {
 	for i := 0; i < len(g.world.Objects); i++ {
 		for j := i + 1; j < len(g.world.Objects); j++ {
@@ -128,8 +148,8 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 			} else {
 				g.Collision = false
 			}
-			obj1.UpdateKinematics(screenWidth, screenHeight, timeDelta)
-			obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta)
+			obj1.UpdateKinematics(screenWidth, screenHeight, timeDelta, gravity)
+			obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta, gravity)
 		}
 	}
 }

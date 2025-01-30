@@ -36,6 +36,8 @@ func HitsOtherObject(object1, object2 *Shape) bool {
 		newV2Normal := v2Normal.Scale((mass2 - mass1) / (mass1 + mass2)).Add(v1Normal.Scale(2 * mass1 / (mass1 + mass2)))
 
 		// Update velocities
+
+		//Can add a coefficient of restitution here if we want to make the collision inelestic
 		(*object1).SetVelocity(v1Tangential.Add(newV1Normal))
 		(*object2).SetVelocity(v2Tangential.Add(newV2Normal))
 

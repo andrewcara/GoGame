@@ -152,10 +152,12 @@ func drawLine(screen *ebiten.Image, p1, p2 Point, clr color.Color) {
 	}
 }
 
-func (p *Polygon) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64) {
+func (p *Polygon) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64, gravity linalg.Vector) {
 	// Apply velocity to position
+	// Apply gravity
+	p.Dynamic.Velocity.Y += (gravity.Y) * timeDelta
 	newCenterX := p.Center.X + p.Dynamic.Velocity.X*timeDelta
-	newCenterY := p.Center.Y + p.Dynamic.Velocity.Y*timeDelta
+	newCenterY := p.Center.Y + p.Dynamic.Velocity.Y*timeDelta + (0.5 * gravity.Y * math.Pow(timeDelta, 2))
 
 	// Temporarily update center to check boundary collisions
 
@@ -200,17 +202,6 @@ func (p *Polygon) UpdateKinematics(screenWidth, screenHeight int, timeDelta floa
 	if !collisionOccurred {
 		p.Center = Point{X: newCenterX, Y: newCenterY}
 	}
-
-	// // Apply gravity if enabled
-	// if p.Dynamic.UseGravity {
-	//     p.Dynamic.Velocity.Y += p.Dynamic.Gravity * timeDelta
-	// }
-
-	// // Apply drag/air resistance
-	// p.Dynamic.Velocity.X *= (1.0 - p.Dynamic.Drag * timeDelta)
-	// p.Dynamic.Velocity.Y *= (1.0 - p.Dynamic.Drag * timeDelta)
-
-	// Update vertices to match new center position
 	p.updateVertices()
 }
 
