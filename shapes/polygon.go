@@ -2,7 +2,6 @@ package shapes
 
 import (
 	linalg "HeadSoccer/math/helper"
-	dynamics "HeadSoccer/math/helper/dynamic_properties"
 	"image/color"
 	"math"
 
@@ -14,30 +13,26 @@ type Polygon struct {
 	Vertices []Point
 	Offsets  []Point
 	//Velocity to be implemented as a vector
-	Dynamic dynamics.DynamicProperties
 }
 
 // Find the Point that is the furthest from the Center given a directional vector
 func (p *Polygon) FurthestPoint(direction_vector linalg.Vector) Point {
-
+	// Ensure vertices are up to date
 	maximum_dot_product := linalg.DotProduct(linalg.NewVector(p.Center, p.Vertices[0]), direction_vector)
 	maximum_point := p.Vertices[0]
-	//Iterate through every point in the list of Points to Find the furthest
-	//The furthest point will be the maximum dot product
 
-	for _, point := range p.Vertices[1:len(p.Vertices)] {
-		local_dot_proudct := linalg.DotProduct(direction_vector, linalg.NewVector(p.Center, point))
-
-		if local_dot_proudct > maximum_dot_product {
+	for _, point := range p.Vertices[1:] {
+		local_dot_product := linalg.DotProduct(direction_vector, linalg.NewVector(p.Center, point))
+		if local_dot_product > maximum_dot_product {
 			maximum_point = point
-			maximum_dot_product = local_dot_proudct
-
+			maximum_dot_product = local_dot_product
 		}
 	}
 	return maximum_point
 }
 
 func (p *Polygon) updateVertices() {
+	p.Vertices = make([]Point, len(p.Offsets))
 	for i, offset := range p.Offsets {
 		p.Vertices[i] = Point{
 			X: p.Center.X + offset.X,
@@ -46,11 +41,10 @@ func (p *Polygon) updateVertices() {
 	}
 }
 
-func (p *Polygon) Initialize(center Point, vertices []Point, dynamicProperties dynamics.DynamicProperties) {
+func (p *Polygon) Initialize(center Point, vertices []Point) {
 	p.Center = center
 	p.Vertices = vertices
-	p.calculateOffsets()          // Calculate the offsets based on the initial vertices
-	p.Dynamic = dynamicProperties // Set dynamic properties
+	p.calculateOffsets() // Calculate the offsets based on the initial vertices// Set dynamic properties
 }
 
 func (p *Polygon) calculateOffsets() {
@@ -101,25 +95,12 @@ func (p *Polygon) GetSurfacePoint(direction_vector linalg.Vector) Point {
 }
 
 func (p *Polygon) GetCenter() Point {
-	p.updateVertices()
 	return p.Center
 }
 
 func (p *Polygon) SetCenter(point Point) {
-	p.updateVertices()
 	p.Center = point
-}
-
-func (p *Polygon) GetVelocity() linalg.Vector {
-	return p.Dynamic.Velocity
-}
-
-func (p *Polygon) SetVelocity(new_velocity linalg.Vector) {
-	p.Dynamic.Velocity = new_velocity
-}
-
-func (p *Polygon) GetMass() float64 {
-	return p.Dynamic.Mass
+	p.updateVertices()
 }
 
 func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
@@ -150,63 +131,6 @@ func drawLine(screen *ebiten.Image, p1, p2 Point, clr color.Color) {
 		x += xIncrement
 		y += yIncrement
 	}
-}
-
-func (p *Polygon) UpdateKinematics(screenWidth, screenHeight int, timeDelta float64, gravity linalg.Vector) {
-	// Apply velocity to position
-	// Apply gravity
-	p.Dynamic.Velocity.Y += (gravity.Y) * timeDelta
-	newCenterX := p.Center.X + p.Dynamic.Velocity.X*timeDelta
-	newCenterY := p.Center.Y + p.Dynamic.Velocity.Y*timeDelta + (0.5 * gravity.Y * math.Pow(timeDelta, 2))
-
-	// Temporarily update center to check boundary collisions
-
-	p.Center = Point{X: newCenterX, Y: newCenterY}
-	p.updateVertices()
-
-	// Check and handle boundary collisions
-	boundary := p.GetBoundaryPoints()
-	collisionOccurred := false
-
-	// Right boundary
-	if boundary.MaxX >= float64(screenWidth) {
-		overlap := boundary.MaxX - float64(screenWidth)
-		p.Center.X -= overlap
-		p.Dynamic.Velocity.X = -math.Abs(p.Dynamic.Velocity.X)
-		collisionOccurred = true
-	}
-
-	// Left boundary
-	if boundary.MinX <= 0 {
-		p.Center.X -= boundary.MinX
-		p.Dynamic.Velocity.X = math.Abs(p.Dynamic.Velocity.X)
-		collisionOccurred = true
-	}
-
-	// Bottom boundary
-	if boundary.MaxY >= float64(screenHeight) {
-		overlap := boundary.MaxY - float64(screenHeight)
-		p.Center.Y -= overlap
-		p.Dynamic.Velocity.Y = -math.Abs(p.Dynamic.Velocity.Y)
-		collisionOccurred = true
-	}
-
-	// Top boundary
-	if boundary.MinY <= 0 {
-		p.Center.Y -= boundary.MinY
-		p.Dynamic.Velocity.Y = math.Abs(p.Dynamic.Velocity.Y)
-		collisionOccurred = true
-	}
-
-	// If no collision occurred, keep the new position
-	if !collisionOccurred {
-		p.Center = Point{X: newCenterX, Y: newCenterY}
-	}
-	p.updateVertices()
-}
-
-type BoundaryPoints struct {
-	MinX, MaxX, MinY, MaxY float64
 }
 
 // GetBoundaryPoints returns the extreme points of the polygon

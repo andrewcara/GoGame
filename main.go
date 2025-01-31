@@ -1,6 +1,7 @@
 package main
 
 import (
+	player "HeadSoccer/input"
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
 
@@ -10,19 +11,20 @@ import (
 	"log"
 	"time"
 
-	//"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 // Gravity is positve since "down" on the screen is positive and up is negative
 var gravity = linalg.Vector{X: 0, Y: 98.81}
 
 const (
-	physicsTickRate = 1.0 / 100
-	screenWidth     = 300
-	screenHeight    = 300
-	squareWidth     = 15
-	maxSteps        = 3
+	physicsTickRate   = 1.0 / 100
+	screenWidth       = 600
+	screenHeight      = 300
+	squareWidth       = 15
+	maxSteps          = 3
+	moveInputVelocity = 10
 )
 
 type Game struct {
@@ -30,66 +32,51 @@ type Game struct {
 	Collision      bool
 	accumulator    float64
 	lastUpdateTime time.Time
+	pressedKeys    []ebiten.Key
 }
 
 func NewGame() *Game {
-
-	ball := shapes.Circle{Center: linalg.Point{X: 100, Y: 30}, Radius: 15,
+	// Ball initialization - centered more visibly
+	ball := physics.PhysicsBody{
+		Shape: &shapes.Circle{
+			Center: linalg.Point{X: screenWidth / 2, Y: screenHeight / 2},
+			Radius: 15,
+		},
 		Dynamic: dynamics.DynamicProperties{
-			Velocity:   linalg.Vector{X: float64(150), Y: float64(100)}, // Example velocity
-			Force:      linalg.Vector{X: 0, Y: -9.8},                    // Gravity force
-			Mass:       1.0,
-			Accelation: gravity, // Example mass
-		}}
-	ball2 := shapes.Circle{Center: linalg.Point{X: 20, Y: 20}, Radius: 20,
+			Velocity:     linalg.Vector{X: 0, Y: 0},
+			Force:        linalg.Vector{X: 0, Y: -9.8},
+			Mass:         5.0,
+			Acceleration: gravity,
+		},
+	}
+
+	// Player 1 - Left side of screen
+	player1Center := linalg.Point{X: 20, Y: 20}
+	// Define vertices relative to center
+	vertices1 := []linalg.Point{
+		{X: 10, Y: 10}, // top left
+		{X: 10, Y: 30}, // top right
+		{X: 30, Y: 30}, // bottom left
+		{X: 30, Y: 10}, // bottom right
+	}
+	var polygon1 shapes.Polygon
+	polygon1.Initialize(player1Center, vertices1)
+
+	player1Body := physics.PhysicsBody{
+		Shape: &polygon1,
 		Dynamic: dynamics.DynamicProperties{
-			Velocity:   linalg.Vector{X: float64(260), Y: float64(-100)}, // Example velocity
-			Force:      linalg.Vector{X: 0, Y: -9.8},                     // Gravity force
-			Mass:       1.0,
-			Accelation: gravity, // Example mass
-		}}
-
-	_ = ball
-	initialCenter := linalg.Point{X: 100, Y: 100}
-	vertices := []linalg.Point{
-		{X: 130, Y: 130},
-		{X: 150, Y: 100},
-		{X: 140, Y: 70},
-		{X: 110, Y: 50},
-		{X: 80, Y: 60},
-		{X: 60, Y: 90},
-		{X: 70, Y: 120},
-		{X: 100, Y: 140},
-		{X: 120, Y: 150},
-	}
-	dynamicProps := dynamics.DynamicProperties{
-		Velocity: linalg.Vector{X: 20, Y: 15},
-		Force:    linalg.Vector{X: 0, Y: -9.8}, // Example gravity force
-		Mass:     10.0,
+			Velocity:     linalg.Vector{X: 0, Y: 0},
+			Force:        linalg.Vector{X: 0, Y: -9.8},
+			Mass:         5.0,
+			Acceleration: gravity,
+		},
 	}
 
-	var polygon shapes.Polygon
-	polygon.Initialize(initialCenter, vertices, dynamicProps)
+	// Player 2 - Right side of screen
 
-	initialCenter2 := linalg.Point{X: 50, Y: 50}
-	vertices2 := []linalg.Point{
-		{X: 75, Y: 75},
-		{X: 75, Y: 25},
-		{X: 25, Y: 25},
-		{X: 25, Y: 75},
-	}
-
-	dynamicProps2 := dynamics.DynamicProperties{
-		Velocity: linalg.Vector{X: 50, Y: 30},
-		Force:    linalg.Vector{X: 0, Y: -9.8}, // Example gravity force
-		Mass:     5.0,
-	}
-
-	var polygon2 shapes.Polygon
-	polygon2.Initialize(initialCenter2, vertices2, dynamicProps2)
-
+	// Initialize physics world
 	world := physics.PhysicsWorld{
-		Objects: make([]shapes.Shape, 0),
+		Objects: make([]*physics.PhysicsBody, 0),
 		Gravity: gravity,
 	}
 
@@ -100,12 +87,11 @@ func NewGame() *Game {
 		accumulator:    0,
 	}
 
-	// Add Physic Objects to Game
+	// Add Physics Objects to Game
 	game.world.Objects = append(game.world.Objects,
+		&player1Body,
+		//&player2Body,
 		&ball,
-		&ball2,
-		&polygon,
-		&polygon2,
 	)
 
 	return game
@@ -114,7 +100,38 @@ func NewGame() *Game {
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 	return screenWidth, screenHeight
 }
+
+func (g *Game) HanlePlayerInput(player_moves player.PlayerMoves) {
+
+	g.pressedKeys = inpututil.AppendPressedKeys(g.pressedKeys[:0])
+	player1 := &g.world.Objects[player_moves.PlayerID]
+	for _, key := range g.pressedKeys {
+		switch key.String() {
+		case player_moves.Down:
+			move := linalg.Vector{X: 0, Y: moveInputVelocity}
+			(*player1).SetVelocity(move.Add((*player1).GetVelocity()))
+		case player_moves.Up:
+			move := linalg.Vector{X: 0, Y: -moveInputVelocity}
+			(*player1).SetVelocity(move.Add((*player1).GetVelocity()))
+		case player_moves.Right:
+			move := linalg.Vector{X: moveInputVelocity, Y: 0}
+			(*player1).SetVelocity(move.Add((*player1).GetVelocity()))
+		case player_moves.Left:
+			move := linalg.Vector{X: -moveInputVelocity, Y: 0}
+			(*player1).SetVelocity(move.Add((*player1).GetVelocity()))
+		}
+	}
+}
+
+func (g *Game) HandleUserInput() {
+	player1_moves := player.PlayerMoves{Up: "ArrowUp", Down: "ArrowDown", Left: "ArrowLeft", Right: "ArrowRight", PlayerID: 0}
+	g.HanlePlayerInput(player1_moves)
+
+}
+
 func (g *Game) Update() error {
+
+	g.HandleUserInput()
 	currentTime := time.Now()
 	frameTime := currentTime.Sub(g.lastUpdateTime).Seconds()
 	g.lastUpdateTime = currentTime
@@ -143,7 +160,7 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 			obj1 := g.world.Objects[i]
 			obj2 := g.world.Objects[j]
 
-			if physics.HitsOtherObject(&obj1, &obj2) {
+			if physics.CollisionOccurs(obj1, obj2) {
 				g.Collision = true
 			} else {
 				g.Collision = false
@@ -159,7 +176,7 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 func (g *Game) Draw(screen *ebiten.Image) {
 	color := color.RGBA{200, 150, 3, 255}
 	for _, obj := range g.world.Objects {
-		obj.DrawShape(screen, color)
+		obj.Shape.DrawShape(screen, color)
 	}
 }
 

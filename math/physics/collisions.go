@@ -7,16 +7,16 @@ import (
 //We Need to detect collisions with the ground, the walls and the top of the screen
 //We also need to detect collision between players and the ball and both players
 
-func HitsOtherObject(object1, object2 *Shape) bool {
+func CollisionOccurs(object1, object2 *PhysicsBody) bool {
 	//if objects collide
 	//calculate normal to collision and alter the shapes velocity
-	if GJK(*object1, *object2) {
+	if GJK(*&object1.Shape, *&object2.Shape) {
 
 		//Since there is a time delta between each update their may be a case where the collision is detected with the shapes overlapping
 		//We need to offset the distances between whatever overlap does occur so that we can properlt draw the ball
 
-		SetNewDistances(object1, object2)
-		collision_normal := linalg.NewVector((*object1).GetCenter(), (*object2).GetCenter())
+		SetNewDistances(&object1.Shape, &object2.Shape)
+		collision_normal := linalg.NewVector((*object1).Shape.GetCenter(), (*object2).Shape.GetCenter())
 		collision_normal = collision_normal.Normalize()
 
 		v1_init := (*object1).GetVelocity()
@@ -32,13 +32,13 @@ func HitsOtherObject(object1, object2 *Shape) bool {
 		mass1 := (*object1).GetMass()
 		mass2 := (*object2).GetMass()
 
+		//Can add a coefficient of restitution here if we want to make the collision inelestic
 		newV1Normal := v1Normal.Scale((mass1 - mass2) / (mass1 + mass2)).Add(v2Normal.Scale(2 * mass2 / (mass1 + mass2)))
 		newV2Normal := v2Normal.Scale((mass2 - mass1) / (mass1 + mass2)).Add(v1Normal.Scale(2 * mass1 / (mass1 + mass2)))
 
 		// Update velocities
 
-		//Can add a coefficient of restitution here if we want to make the collision inelestic
-		(*object1).SetVelocity(v1Tangential.Add(newV1Normal))
+		(*object1).SetVelocity((v1Tangential.Add(newV1Normal)))
 		(*object2).SetVelocity(v2Tangential.Add(newV2Normal))
 
 		return true
