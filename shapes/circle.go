@@ -2,7 +2,6 @@ package shapes
 
 import (
 	linalg "HeadSoccer/math/helper"
-	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -42,8 +41,6 @@ func (c *Circle) GetBoundaryPoints() BoundaryPoints {
 	maxX := c.Center.Add(Point{X: c.Radius, Y: 0}).X
 	minY := c.Center.Subtract(Point{X: 0, Y: c.Radius}).Y
 	maxY := c.Center.Add(Point{X: 0, Y: c.Radius}).Y
-
-	fmt.Println(minX, minY, maxX, maxY)
 	return BoundaryPoints{
 		MinX: minX,
 		MaxX: maxX,

@@ -15,7 +15,19 @@ func CollisionOccurs(object1, object2 *PhysicsBody) bool {
 		//Since there is a time delta between each update their may be a case where the collision is detected with the shapes overlapping
 		//We need to offset the distances between whatever overlap does occur so that we can properlt draw the ball
 
-		SetNewDistances(&object1.Shape, &object2.Shape)
+		obj1_center, obj2_center, overlap := GetNewDistances(&object1.Shape, &object2.Shape)
+
+		//Only adjusting position of those objects that are not static
+		if overlap {
+			if !(*object1).IsStatic {
+
+				(*object1).Shape.SetCenter(obj1_center)
+			}
+			if !(*object2).IsStatic {
+
+				(*object2).Shape.SetCenter(obj2_center)
+			}
+		}
 		collision_normal := linalg.NewVector((*object1).Shape.GetCenter(), (*object2).Shape.GetCenter())
 		collision_normal = collision_normal.Normalize()
 
@@ -36,10 +48,14 @@ func CollisionOccurs(object1, object2 *PhysicsBody) bool {
 		newV1Normal := v1Normal.Scale((mass1 - mass2) / (mass1 + mass2)).Add(v2Normal.Scale(2 * mass2 / (mass1 + mass2)))
 		newV2Normal := v2Normal.Scale((mass2 - mass1) / (mass1 + mass2)).Add(v1Normal.Scale(2 * mass1 / (mass1 + mass2)))
 
-		// Update velocities
+		// Update velocities of only dynamic
 
-		(*object1).SetVelocity((v1Tangential.Add(newV1Normal)))
-		(*object2).SetVelocity(v2Tangential.Add(newV2Normal))
+		if !(*object1).IsStatic {
+			(*object1).SetVelocity((v1Tangential.Add(newV1Normal)))
+		}
+		if !(*object2).IsStatic {
+			(*object2).SetVelocity(v2Tangential.Add(newV2Normal))
+		}
 
 		return true
 	}
@@ -47,7 +63,7 @@ func CollisionOccurs(object1, object2 *PhysicsBody) bool {
 
 }
 
-func SetNewDistances(object1, object2 *Shape) {
+func GetNewDistances(object1, object2 *Shape) (linalg.Point, linalg.Point, bool) {
 	collision_normal := linalg.NewVector((*object1).GetCenter(), (*object2).GetCenter())
 
 	// Get the "radius" of each shape along the collision normal
@@ -66,19 +82,15 @@ func SetNewDistances(object1, object2 *Shape) {
 	overlap := (radius1 + radius2 - dist) / 2
 
 	// If there is overlap, move objects apart
-	if overlap > 0 {
-		moveX := (dx / dist) * overlap
-		moveY := (dy / dist) * overlap
+	moveX := (dx / dist) * overlap
+	moveY := (dy / dist) * overlap
+	// Update positions
 
-		// Update positions
-		(*object1).SetCenter(Point{
+	return Point{
 			X: (*object1).GetCenter().X - moveX,
 			Y: (*object1).GetCenter().Y - moveY,
-		})
-
-		(*object2).SetCenter(Point{
+		}, Point{
 			X: (*object2).GetCenter().X + moveX,
-			Y: (*object2).GetCenter().Y + moveY,
-		})
-	}
+			Y: (*object2).GetCenter().Y + moveY}, overlap > 0
+
 }
