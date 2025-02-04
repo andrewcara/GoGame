@@ -1,0 +1,91 @@
+package main
+
+import (
+	"encoding/json"
+	"log"
+
+	"github.com/gorilla/websocket"
+)
+
+// ClientList is a map used to help manage a map of clients
+type ClientList map[*Client]bool
+
+// Client is a websocket client, basically a frontend visitor
+type Client struct {
+	// the websocket connection
+	connection *websocket.Conn
+
+	// manager is the manager used to manage the client
+	manager *Manager
+
+	egress chan []byte
+}
+
+// NewClient is used to initialize a new Client with all required values initialized
+func NewClient(conn *websocket.Conn, manager *Manager) *Client {
+	return &Client{
+		connection: conn,
+		manager:    manager,
+		egress:     make(chan []byte),
+	}
+}
+
+func (c *Client) readMessages() {
+	defer func() {
+		// Graceful Close the Connection once this
+		// function is done
+		c.manager.removeClient(c)
+	}()
+	// Loop Forever
+	for {
+		// ReadMessage is used to read the next message in queue
+		// in the connection
+		messageType, payload, err := c.connection.ReadMessage()
+
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error reading message: %v", err)
+			}
+			break // Break the loop to close conn & Cleanup
+		}
+		log.Println("MessageType: ", messageType)
+		log.Println("Payload: ", string(payload))
+
+		for wsclient := range c.manager.clients {
+			wsclient.egress <- payload
+		}
+	}
+}
+
+func (c *Client) writeMessages() {
+	defer func() {
+		// Graceful close if this triggers a closing
+		c.manager.removeClient(c)
+	}()
+
+	//for select will read message from channel as soon as it arrives
+	//current implementation is to read data from socket then write it back
+	for {
+		select {
+		case message, ok := <-c.egress:
+			// Ok will be false Incase the egress channel is closed
+			if !ok {
+				// Manager has closed this connection channel, so communicate that to frontend
+				if err := c.connection.WriteMessage(websocket.CloseMessage, nil); err != nil {
+					// Log that the connection is closed and the reason
+					log.Println("connection closed: ", err)
+				}
+				// Return to close the goroutine
+				return
+			}
+			// Write a Regular text message to the connection
+			new_event, _ := json.Marshal(Event{Type: "new_message", Payload: message})
+			_ = new_event
+			if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
+				log.Println(err)
+			}
+			log.Println("sent message")
+		}
+
+	}
+}
