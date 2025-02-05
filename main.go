@@ -10,12 +10,14 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 // Gravity is positve since "down" on the screen is positive and up is negative
 var gravity = linalg.Vector{X: 0, Y: 100.81}
+var id = uuid.New()
 
 const (
 	physicsTickRate   = 1.0 / 100
@@ -23,9 +25,10 @@ const (
 	screenHeight      = 300
 	squareWidth       = 15
 	maxSteps          = 3
-	moveInputVelocity = 20
+	moveInputVelocity = 15
 	moveForce         = 500.0 // Base movement force
 	maxSpeed          = 200.0 // Maximum speed cap
+
 )
 
 type Game struct {

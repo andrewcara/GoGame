@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -19,6 +20,8 @@ type Client struct {
 	manager *Manager
 
 	egress chan []byte
+
+	roomId uuid.UUID
 }
 
 // NewClient is used to initialize a new Client with all required values initialized
@@ -27,10 +30,12 @@ func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 		connection: conn,
 		manager:    manager,
 		egress:     make(chan []byte),
+		roomId:     uuid.Nil,
 	}
 }
 
 func (c *Client) readMessages() {
+
 	defer func() {
 		// Graceful Close the Connection once this
 		// function is done
@@ -40,19 +45,22 @@ func (c *Client) readMessages() {
 	for {
 		// ReadMessage is used to read the next message in queue
 		// in the connection
-		messageType, payload, err := c.connection.ReadMessage()
-
+		_, payload, err := c.connection.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error reading message: %v", err)
 			}
 			break // Break the loop to close conn & Cleanup
 		}
-		log.Println("MessageType: ", messageType)
-		log.Println("Payload: ", string(payload))
+		var request Event
+		if err := json.Unmarshal(payload, &request); err != nil {
+			log.Printf("error marshalling message: %v", err)
+			break
+		}
+		// Route the Event
 
-		for wsclient := range c.manager.clients {
-			wsclient.egress <- payload
+		if err := c.manager.routeEvent(request, c); err != nil {
+			log.Println("Error handeling Message: ", err)
 		}
 	}
 }
@@ -80,7 +88,9 @@ func (c *Client) writeMessages() {
 			}
 			// Write a Regular text message to the connection
 			new_event, _ := json.Marshal(Event{Type: "new_message", Payload: message})
+			//c.manager.routeEvent(json.Unmarshal(new_event), c)
 			_ = new_event
+
 			if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
 				log.Println(err)
 			}
