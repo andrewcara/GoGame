@@ -6,7 +6,6 @@ import (
 
 	"HeadSoccer/initialization"
 	"HeadSoccer/math/physics"
-	"image/color"
 	"log"
 	"time"
 
@@ -147,10 +146,10 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 // Update positions
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	color := color.RGBA{200, 150, 3, 255}
-	for _, obj := range g.world.Objects {
-		obj.Shape.DrawShape(screen, color)
-	}
+	// color := color.RGBA{200, 150, 3, 255}
+	// for _, obj := range g.world.Objects {
+
+	// }
 }
 
 func main() {

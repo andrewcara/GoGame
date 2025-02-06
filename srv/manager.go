@@ -27,9 +27,18 @@ var (
 	ErrEventNotSupported = errors.New("this event type is not supported")
 )
 
+type status int
+
+const (
+	ONGOING  = 1
+	FINSIHED = 2
+)
+
 type Room struct {
 	ID      uuid.UUID
 	clients []*Client
+	Game    *Game
+	status  chan int
 }
 
 type Manager struct {
@@ -52,6 +61,7 @@ func NewManager() *Manager {
 func (m *Manager) setupEventHandlers() {
 	m.handlers[EventCreateRoom] = CreateRoomEvent
 	m.handlers[EventJoinRoom] = JoinRoomEvent
+	m.handlers[EventMove] = MoveEvent
 }
 
 func (m *Manager) routeEvent(event Event, c *Client) error {
@@ -95,11 +105,9 @@ func (m *Manager) addClient(client *Client) {
 func (m *Manager) addRoom(client *Client) {
 	m.Lock()
 	defer m.Unlock()
-	room_clients := make([]*Client, 0)
-	room_clients = append(room_clients, client)
-	new_room := Room{ID: client.roomId, clients: room_clients}
+	room_clients := []*Client{client}
+	new_room := Room{ID: client.roomId, clients: room_clients, Game: NewGame(), status: make(chan int)} // Initialize Game
 	m.rooms[client.roomId] = new_room
-
 }
 
 func (m *Manager) removeRoom(ID uuid.UUID) {
@@ -123,8 +131,9 @@ func (m *Manager) addUserToRoom(client *Client, id uuid.UUID) error {
 
 	if len(room.clients) == 1 && client.roomId != id {
 		room.clients = append(room.clients, client)
-		client.roomId = id
+		client.roomId = id //Create a new game once a new user joins
 		m.rooms[id] = room // Update the room in the map
+		go broadcastGameUpdates(&room)
 		return nil
 	}
 

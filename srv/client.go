@@ -2,10 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
+)
+
+var (
+	// pongWait is how long we will await a pong response from client
+	game_update_interval = 1000 * time.Millisecond
 )
 
 // ClientList is a map used to help manage a map of clients
@@ -22,6 +29,8 @@ type Client struct {
 	egress chan []byte
 
 	roomId uuid.UUID
+
+	playerId int
 }
 
 // NewClient is used to initialize a new Client with all required values initialized
@@ -31,6 +40,7 @@ func NewClient(conn *websocket.Conn, manager *Manager) *Client {
 		manager:    manager,
 		egress:     make(chan []byte),
 		roomId:     uuid.Nil,
+		playerId:   -1,
 	}
 }
 
@@ -97,5 +107,50 @@ func (c *Client) writeMessages() {
 			log.Println("sent message")
 		}
 
+	}
+}
+
+func broadcastGameUpdates(room *Room) {
+	ticker := time.NewTicker(game_update_interval)
+	defer ticker.Stop()
+	//TO-DO Add conditions for terminations go function
+	for {
+		select {
+		case <-ticker.C:
+			room.Game.mu.Lock()
+			room.Game.UpdatePhysics(physicsTickRate)
+			// Create game state snapshot quickly
+			ball_position := room.Game.world.Objects[2].Shape.GetCenter()
+			p1_position := room.Game.world.Objects[0].Shape.GetCenter()
+			p2_position := room.Game.world.Objects[1].Shape.GetCenter()
+
+			room.Game.mu.Unlock()
+			fmt.Println(ball_position, p1_position, p2_position)
+			GameBroadcast := GameState{
+				BallPosition:    Position{ball_position.X, ball_position.Y},
+				Player1Position: Position{p1_position.X, p1_position.Y},
+				Player2Position: Position{p2_position.X, p2_position.Y},
+			}
+
+			data, err := json.Marshal(GameBroadcast)
+			if err != nil {
+				return
+			}
+
+			BroadcastEvent := Event{
+				Payload: data,
+				Type:    EventGameUpdate,
+			}
+
+			marshalled_broadcast_event, _ := json.Marshal(BroadcastEvent)
+
+			for _, client := range room.clients {
+				client.egress <- marshalled_broadcast_event
+			}
+		case status := <-room.status:
+			if status == FINSIHED {
+				break
+			}
+		}
 	}
 }

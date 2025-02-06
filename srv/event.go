@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -21,39 +20,68 @@ type EventHandler func(event Event, c *Client) error
 
 const (
 	// EventSendMessage is the event name for new chat messages sent
-	EventSendMessage      = "send_message"
-	EventNewMessage       = "new_message"
 	EventCreateRoom       = "create_room"
 	EventWaitingForPlayer = "waiting"
 	EventJoinRoom         = "join_room"
 	EventAboutToStart     = "about_start"
+	EventMove             = "move_Received"
+	EventGameUpdate       = "game_update"
 )
-
-// SendMessageEvent is the payload sent in the
-// send_message event
-type SendMessageEvent struct {
-	Message string `json:"message"`
-	From    string `json:"from"`
-}
 
 // struct for handling data sent to client after a room is created
 type SendCreatedRoom struct {
 	ID uuid.UUID `json:"id"`
+}
+type Move struct {
+	Move   string    `json:"move"`
+	GameID uuid.UUID `json:"game_id"`
 }
 
 type JoinRoomMessage struct {
 	ID uuid.UUID `json:"id"`
 }
 
+type Position struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+type GameState struct {
+	BallPosition    Position `json:"ball_position"`
+	Player1Position Position `json:"p1_position"`
+	Player2Position Position `json:"p2_position"`
+}
+
 // NewMessageEvent is returned when responding to send_message
-type NewMessageEvent struct {
-	SendMessageEvent
-	Sent time.Time `json:"sent"`
+
+func MoveEvent(event Event, c *Client) error {
+	// m.Lock()
+	// defer m.Unlock()
+	var moveevent Move
+
+	if err := json.Unmarshal(event.Payload, &moveevent); err != nil {
+		return fmt.Errorf("bad payload in request: %v", err)
+	}
+
+	fmt.Println(moveevent.Move)
+	room, ok := c.manager.rooms[moveevent.GameID]
+	if !ok {
+		return fmt.Errorf("room not found")
+	}
+	if room.Game == nil {
+		fmt.Println(room.clients, room.ID, room.Game)
+		return fmt.Errorf("game not initialized in room")
+	}
+	room.Game.mu.Lock()
+	defer room.Game.mu.Unlock()
+
+	room.Game.HandleUserInput(c.playerId, moveevent.Move)
+	return nil
 }
 
 func CreateRoomEvent(event Event, c *Client) error {
 	//No need to work with any payload here only assign a new room id to the client and add it to the managers list
 	c.roomId = uuid.New()
+	c.playerId = 0
 	c.manager.addRoom(c)
 	var created_room SendCreatedRoom
 
@@ -75,7 +103,7 @@ func CreateRoomEvent(event Event, c *Client) error {
 
 func JoinRoomEvent(event Event, c *Client) error {
 	var joinevent JoinRoomMessage
-
+	c.playerId = 1
 	if err := json.Unmarshal(event.Payload, &joinevent); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
@@ -91,40 +119,7 @@ func JoinRoomEvent(event Event, c *Client) error {
 	//We are letting both players in the room know that the game is about to begin
 	for _, client := range c.manager.rooms[joinevent.ID].clients {
 		client.egress <- message
-	}
 
-	return nil
-
-}
-
-// SendMessageHandler will send out a message to all other participants in the chat
-func SendMessageHandler(event Event, c *Client) error {
-	// Marshal Payload into wanted format
-	var chatevent SendMessageEvent
-	if err := json.Unmarshal(event.Payload, &chatevent); err != nil {
-		return fmt.Errorf("bad payload in request: %v", err)
-	}
-
-	// Prepare an Outgoing Message to others
-	var broadMessage NewMessageEvent
-
-	broadMessage.Sent = time.Now()
-	broadMessage.Message = chatevent.Message
-	broadMessage.From = chatevent.From
-
-	data, err := json.Marshal(broadMessage)
-	if err != nil {
-		return fmt.Errorf("failed to marshal broadcast message: %v", err)
-	}
-
-	// Place payload into an Event
-	var outgoingEvent Event
-	outgoingEvent.Payload = data
-	outgoingEvent.Type = EventNewMessage
-	// Broadcast to all other Clients
-	message, _ := json.Marshal(outgoingEvent)
-	for client := range c.manager.clients {
-		client.egress <- message
 	}
 
 	return nil

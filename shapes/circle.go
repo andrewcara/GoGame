@@ -2,10 +2,6 @@ package shapes
 
 import (
 	linalg "HeadSoccer/math/helper"
-	"image/color"
-
-	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
@@ -47,9 +43,4 @@ func (c *Circle) GetBoundaryPoints() BoundaryPoints {
 		MinY: minY,
 		MaxY: maxY,
 	}
-}
-
-func (c *Circle) DrawShape(screen *ebiten.Image, color color.RGBA) {
-	vector.DrawFilledCircle(screen, float32(c.Center.X), float32(c.Center.Y), float32(c.Radius), color, false)
-
 }

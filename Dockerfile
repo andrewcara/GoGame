@@ -5,6 +5,8 @@ ENV GOFLAGS=-mod=vendor
 
 WORKDIR /app
 
+# Install necessary system dependencies
+
 EXPOSE 8080
 
 COPY . .

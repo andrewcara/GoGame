@@ -29,7 +29,4 @@ func setupAPI(mux *http.ServeMux) {
 	mux.HandleFunc("/ws", manager.serveWS)
 
 	// Any other API endpoints
-	mux.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Server is running"))
-	})
 }
