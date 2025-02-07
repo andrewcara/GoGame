@@ -114,8 +114,8 @@ func (m *Manager) removeRoom(ID uuid.UUID) {
 	m.Lock()
 	defer m.Unlock()
 
-	if _, ok := m.rooms[ID]; ok {
-
+	if room, ok := m.rooms[ID]; ok {
+		room.status <- FINSIHED
 		delete(m.rooms, ID)
 	}
 }
@@ -128,11 +128,15 @@ func (m *Manager) addUserToRoom(client *Client, id uuid.UUID) error {
 	if !ok {
 		return fmt.Errorf("room not found")
 	}
+	client.playerId = 1
 
 	if len(room.clients) == 1 && client.roomId != id {
 		room.clients = append(room.clients, client)
-		client.roomId = id //Create a new game once a new user joins
-		m.rooms[id] = room // Update the room in the map
+		client.roomId = id
+		m.rooms[id] = room
+
+		// Debug prints
+
 		go broadcastGameUpdates(&room)
 		return nil
 	}

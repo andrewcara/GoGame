@@ -61,9 +61,10 @@ func MoveEvent(event Event, c *Client) error {
 	if err := json.Unmarshal(event.Payload, &moveevent); err != nil {
 		return fmt.Errorf("bad payload in request: %v", err)
 	}
+	//TO-Do investigate why movement.roomId is null
+	fmt.Println(moveevent.Move, c.roomId)
 
-	fmt.Println(moveevent.Move)
-	room, ok := c.manager.rooms[moveevent.GameID]
+	room, ok := c.manager.rooms[c.roomId]
 	if !ok {
 		return fmt.Errorf("room not found")
 	}

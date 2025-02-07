@@ -12,7 +12,7 @@ import (
 
 var (
 	// pongWait is how long we will await a pong response from client
-	game_update_interval = 1000 * time.Millisecond
+	game_update_interval = 100 * time.Millisecond
 )
 
 // ClientList is a map used to help manage a map of clients
@@ -97,33 +97,36 @@ func (c *Client) writeMessages() {
 				return
 			}
 			// Write a Regular text message to the connection
-			new_event, _ := json.Marshal(Event{Type: "new_message", Payload: message})
-			//c.manager.routeEvent(json.Unmarshal(new_event), c)
-			_ = new_event
 
 			if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
 				log.Println(err)
 			}
-			log.Println("sent message")
+			//log.Println("sent message")
 		}
 
 	}
 }
 
 func broadcastGameUpdates(room *Room) {
+	fmt.Printf("Broadcast goroutine started for room: %p, ID: %v\n", room, room.ID)
+
 	ticker := time.NewTicker(game_update_interval)
-	defer ticker.Stop()
-	//TO-DO Add conditions for terminations go function
+	defer func() {
+		ticker.Stop()
+		fmt.Printf("Broadcast goroutine ended for room: %p, ID: %v\n", room, room.ID)
+	}()
+
 	for {
 		select {
 		case <-ticker.C:
+
 			room.Game.mu.Lock()
 			room.Game.UpdatePhysics(physicsTickRate)
 			// Create game state snapshot quickly
 			ball_position := room.Game.world.Objects[2].Shape.GetCenter()
 			p1_position := room.Game.world.Objects[0].Shape.GetCenter()
 			p2_position := room.Game.world.Objects[1].Shape.GetCenter()
-
+			fmt.Println(room.clients, room.ID)
 			room.Game.mu.Unlock()
 			fmt.Println(ball_position, p1_position, p2_position)
 			GameBroadcast := GameState{
