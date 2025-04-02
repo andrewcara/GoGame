@@ -3,6 +3,7 @@ package main
 import (
 	player "HeadSoccer/input"
 	linalg "HeadSoccer/math/helper"
+	"image/color"
 
 	"HeadSoccer/initialization"
 	"HeadSoccer/math/physics"
@@ -146,10 +147,10 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 // Update positions
 
 func (g *Game) Draw(screen *ebiten.Image) {
-	// color := color.RGBA{200, 150, 3, 255}
-	// for _, obj := range g.world.Objects {
-
-	// }
+	color := color.RGBA{200, 150, 3, 255}
+	for _, obj := range g.world.Objects {
+		obj.Shape.DrawShape(screen, color)
+	}
 }
 
 func main() {

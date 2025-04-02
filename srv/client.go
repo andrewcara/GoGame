@@ -12,7 +12,7 @@ import (
 
 var (
 	// pongWait is how long we will await a pong response from client
-	game_update_interval = 100 * time.Millisecond
+	game_update_interval = 10 * time.Millisecond
 )
 
 // ClientList is a map used to help manage a map of clients

@@ -2,7 +2,10 @@ package shapes
 
 import (
 	linalg "HeadSoccer/math/helper"
+	"image/color"
 	"math"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Polygon struct {
@@ -123,5 +126,34 @@ func (p *Polygon) GetBoundaryPoints() BoundaryPoints {
 		MaxX: maxX,
 		MinY: minY,
 		MaxY: maxY,
+	}
+}
+func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
+	for i := 0; i < len(p.Vertices); i++ {
+		v1 := p.Vertices[i]
+		v2 := p.Vertices[(i+1)%len(p.Vertices)]
+		drawLine(screen, v1, v2, color)
+	}
+}
+
+func drawLine(screen *ebiten.Image, p1, p2 Point, clr color.Color) {
+	dx := p2.X - p1.X
+	dy := p2.Y - p1.Y
+	steps := math.Max(math.Abs(dx), math.Abs(dy))
+
+	if steps == 0 {
+		screen.Set(int(p1.X), int(p1.Y), clr)
+		return
+	}
+
+	xIncrement := dx / steps
+	yIncrement := dy / steps
+
+	x := p1.X
+	y := p1.Y
+	for i := float64(0); i <= steps; i++ {
+		screen.Set(int(math.Round(x)), int(math.Round(y)), clr)
+		x += xIncrement
+		y += yIncrement
 	}
 }
