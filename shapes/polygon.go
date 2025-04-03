@@ -1,6 +1,7 @@
 package shapes
 
 import (
+	"HeadSoccer/Sprites"
 	linalg "HeadSoccer/math/helper"
 	"image/color"
 	"math"
@@ -12,6 +13,7 @@ type Polygon struct {
 	Center   Point
 	Vertices []Point
 	Offsets  []Point
+	Image    *ebiten.Image
 	//Velocity to be implemented as a vector
 }
 
@@ -129,11 +131,35 @@ func (p *Polygon) GetBoundaryPoints() BoundaryPoints {
 	}
 }
 func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
-	for i := 0; i < len(p.Vertices); i++ {
-		v1 := p.Vertices[i]
-		v2 := p.Vertices[(i+1)%len(p.Vertices)]
-		drawLine(screen, v1, v2, color)
+
+	if p.Image != nil {
+		origWidth, origHeight := float64(p.Image.Bounds().Dx()), float64(p.Image.Bounds().Dy())
+
+		// Calculate scale factors
+		scaleX := 20 / origWidth
+		scaleY := 20 / origHeight
+
+		// Create draw options
+		op := &ebiten.DrawImageOptions{}
+		// Set scale
+		op.GeoM.Scale(scaleX, scaleY)
+		op.Filter = ebiten.FilterLinear
+		// Set position (after scaling)
+		op.GeoM.Translate(float64(p.Center.X-10), float64(p.Center.Y-10))
+		screen.DrawImage(p.Image, op)
+	} else {
+		for i := 0; i < len(p.Vertices); i++ {
+			v1 := p.Vertices[i]
+			v2 := p.Vertices[(i+1)%len(p.Vertices)]
+			drawLine(screen, v1, v2, color)
+		}
 	}
+
+}
+
+func (p *Polygon) SetImage(image_path string) {
+	p.Image = Sprites.CreateImage(image_path)
+
 }
 
 func drawLine(screen *ebiten.Image, p1, p2 Point, clr color.Color) {

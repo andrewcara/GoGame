@@ -148,6 +148,9 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	color := color.RGBA{200, 150, 3, 255}
+
+	//We need to draw the net, the players and the ball
+
 	for _, obj := range g.world.Objects {
 		obj.Shape.DrawShape(screen, color)
 	}

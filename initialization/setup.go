@@ -74,6 +74,8 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 		IsStatic:            false,
 	}
 
+	ball.Shape.SetImage("soccer_ball.png")
+
 	// Player 1 - Left side of screen
 	player1Center := linalg.Point{X: 400, Y: 400}
 	// Define vertices relative to center
@@ -85,6 +87,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	}
 	var polygon1 shapes.Polygon
 	polygon1.Initialize(player1Center, vertices1)
+	polygon1.SetImage("messi.png")
 
 	player1Body := physics.PhysicsBody{
 		Shape: &polygon1,

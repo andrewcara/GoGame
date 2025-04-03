@@ -1,11 +1,11 @@
 package shapes
 
 import (
+	"HeadSoccer/Sprites"
 	linalg "HeadSoccer/math/helper"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
 const (
@@ -16,6 +16,7 @@ const (
 type Circle struct {
 	Center Point
 	Radius float64
+	Image  *ebiten.Image
 }
 
 func (c *Circle) FurthestPoint(direction_vector linalg.Vector) Point {
@@ -49,7 +50,26 @@ func (c *Circle) GetBoundaryPoints() BoundaryPoints {
 	}
 }
 
+func (c *Circle) SetImage(image_path string) {
+	c.Image = Sprites.CreateImage(image_path)
+}
+
 func (c *Circle) DrawShape(screen *ebiten.Image, color color.RGBA) {
-	vector.DrawFilledCircle(screen, float32(c.Center.X), float32(c.Center.Y), float32(c.Radius), color, false)
+
+	origWidth, origHeight := float64(c.Image.Bounds().Dx()), float64(c.Image.Bounds().Dy())
+
+	// Calculate scale factors
+	scaleX := c.Radius * 2 / origWidth
+	scaleY := c.Radius * 2 / origHeight
+
+	// Create draw options
+	op := &ebiten.DrawImageOptions{}
+	// Set scale
+	op.GeoM.Scale(scaleX, scaleY)
+	op.Filter = ebiten.FilterLinear
+	// Set position (after scaling)
+	op.GeoM.Translate(float64(c.Center.X-c.Radius), float64(c.Center.Y-c.Radius))
+	screen.DrawImage(c.Image, op)
+	//vector.DrawFilledCircle(screen, float32(c.Center.X), float32(c.Center.Y), float32(c.Radius), color, false)
 
 }

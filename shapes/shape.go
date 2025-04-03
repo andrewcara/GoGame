@@ -19,5 +19,6 @@ type Shape interface {
 	GetSurfacePoint(direction_vector linalg.Vector) Point
 	GetBoundaryPoints() BoundaryPoints
 	DrawShape(*ebiten.Image, color.RGBA)
+	SetImage(string)
 	//Where we are passing in the dimensions of the screen into the update function
 }
