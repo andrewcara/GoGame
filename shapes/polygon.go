@@ -10,10 +10,13 @@ import (
 )
 
 type Polygon struct {
-	Center   Point
-	Vertices []Point
-	Offsets  []Point
-	Image    *ebiten.Image
+	Center      Point
+	Vertices    []Point
+	Offsets     []Point
+	Image       *ebiten.Image
+	ImageHeight float64
+	ImageWidth  float64
+	ImageCenter *Point
 	//Velocity to be implemented as a vector
 }
 
@@ -131,29 +134,28 @@ func (p *Polygon) GetBoundaryPoints() BoundaryPoints {
 	}
 }
 func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
+	origWidth, origHeight := float64(p.Image.Bounds().Dx()), float64(p.Image.Bounds().Dy())
 
-	if p.Image != nil {
-		origWidth, origHeight := float64(p.Image.Bounds().Dx()), float64(p.Image.Bounds().Dy())
+	// Calculate scale factors
+	scaleX := p.ImageWidth / origWidth
+	scaleY := p.ImageHeight / origHeight
 
-		// Calculate scale factors
-		scaleX := 20 / origWidth
-		scaleY := 20 / origHeight
+	// Create draw options
+	op := &ebiten.DrawImageOptions{}
+	// Set scale
+	op.GeoM.Scale(scaleX, scaleY)
+	op.Filter = ebiten.FilterLinear
+	// Set position (after scaling)
 
-		// Create draw options
-		op := &ebiten.DrawImageOptions{}
-		// Set scale
-		op.GeoM.Scale(scaleX, scaleY)
-		op.Filter = ebiten.FilterLinear
-		// Set position (after scaling)
-		op.GeoM.Translate(float64(p.Center.X-10), float64(p.Center.Y-10))
-		screen.DrawImage(p.Image, op)
-	} else {
-		for i := 0; i < len(p.Vertices); i++ {
-			v1 := p.Vertices[i]
-			v2 := p.Vertices[(i+1)%len(p.Vertices)]
-			drawLine(screen, v1, v2, color)
-		}
-	}
+	op.GeoM.Translate(float64(p.ImageCenter.X-(p.ImageWidth/2)), float64(p.ImageCenter.Y-(p.ImageHeight/2)))
+	screen.DrawImage(p.Image, op)
+
+}
+
+func (p *Polygon) SetImageDimensions(image_height float64, image_width float64, image_center *Point) {
+	p.ImageHeight = image_height
+	p.ImageWidth = image_width
+	p.ImageCenter = *&image_center
 
 }
 

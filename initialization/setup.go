@@ -3,6 +3,7 @@ package initialization
 import (
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
+	"HeadSoccer/math/helper/point"
 
 	"HeadSoccer/math/physics"
 	"HeadSoccer/shapes"
@@ -43,7 +44,8 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	}
 	var crossbar2 shapes.Polygon
 	crossbar2.Initialize(crossbar2_center, crossbar2_vertices)
-
+	crossbar2.SetImage("right_net.png")
+	crossbar2.SetImageDimensions(77.5, 25.5, &point.Point{X: screenWidth - (25.5 / 2), Y: screenWidth - (77.5 / 2)})
 	crossbarBody2 := physics.PhysicsBody{
 		Shape: &crossbar2,
 		Dynamic: dynamics.DynamicProperties{
@@ -88,6 +90,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	var polygon1 shapes.Polygon
 	polygon1.Initialize(player1Center, vertices1)
 	polygon1.SetImage("messi.png")
+	polygon1.SetImageDimensions(20, 20, &polygon1.Center)
 
 	player1Body := physics.PhysicsBody{
 		Shape: &polygon1,
@@ -112,6 +115,8 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	}
 	var polygon2 shapes.Polygon
 	polygon2.Initialize(player2Center, vertices2)
+	polygon2.SetImage("ronaldo.png")
+	polygon2.SetImageDimensions(20, 20, &polygon2.Center)
 
 	player2Body := physics.PhysicsBody{
 		Shape: &polygon2,
