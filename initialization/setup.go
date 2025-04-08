@@ -20,7 +20,8 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	}
 	var crossbar1 shapes.Polygon
 	crossbar1.Initialize(crossbar1_center, crossbar1_vertices)
-
+	crossbar1.SetImage("left_net.png")
+	crossbar1.SetImageDimensions(80, 50, &point.Point{X: screenWidth - (50 / 2), Y: screenHeight - (80 / 2)})
 	crossbarBody := physics.PhysicsBody{
 		Shape: &crossbar1,
 		Dynamic: dynamics.DynamicProperties{
@@ -45,7 +46,8 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	var crossbar2 shapes.Polygon
 	crossbar2.Initialize(crossbar2_center, crossbar2_vertices)
 	crossbar2.SetImage("right_net.png")
-	crossbar2.SetImageDimensions(77.5, 25.5, &point.Point{X: screenWidth - (25.5 / 2), Y: screenWidth - (77.5 / 2)})
+	crossbar2.SetImageDimensions(80, 50, &point.Point{X: (50 / 2), Y: screenHeight - (80 / 2)})
+
 	crossbarBody2 := physics.PhysicsBody{
 		Shape: &crossbar2,
 		Dynamic: dynamics.DynamicProperties{
