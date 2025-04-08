@@ -3,7 +3,6 @@ package shapes
 import (
 	linalg "HeadSoccer/math/helper"
 	"HeadSoccer/math/helper/point"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -18,7 +17,8 @@ type Shape interface {
 	SetCenter(Point)
 	GetSurfacePoint(direction_vector linalg.Vector) Point
 	GetBoundaryPoints() BoundaryPoints
-	DrawShape(*ebiten.Image, color.RGBA)
+	DrawShape(*ebiten.Image)
 	SetImage(string)
+
 	//Where we are passing in the dimensions of the screen into the update function
 }

@@ -133,7 +133,7 @@ func (p *Polygon) GetBoundaryPoints() BoundaryPoints {
 		MaxY: maxY,
 	}
 }
-func (p *Polygon) DrawShape(screen *ebiten.Image, color color.RGBA) {
+func (p *Polygon) DrawShape(screen *ebiten.Image) {
 	origWidth, origHeight := float64(p.Image.Bounds().Dx()), float64(p.Image.Bounds().Dy())
 
 	// Calculate scale factors

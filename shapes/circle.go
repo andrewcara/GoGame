@@ -3,7 +3,6 @@ package shapes
 import (
 	"HeadSoccer/Sprites"
 	linalg "HeadSoccer/math/helper"
-	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -54,7 +53,7 @@ func (c *Circle) SetImage(image_path string) {
 	c.Image = Sprites.CreateImage(image_path)
 }
 
-func (c *Circle) DrawShape(screen *ebiten.Image, color color.RGBA) {
+func (c *Circle) DrawShape(screen *ebiten.Image) {
 
 	origWidth, origHeight := float64(c.Image.Bounds().Dx()), float64(c.Image.Bounds().Dy())
 
@@ -70,6 +69,4 @@ func (c *Circle) DrawShape(screen *ebiten.Image, color color.RGBA) {
 	// Set position (after scaling)
 	op.GeoM.Translate(float64(c.Center.X-c.Radius), float64(c.Center.Y-c.Radius))
 	screen.DrawImage(c.Image, op)
-	//vector.DrawFilledCircle(screen, float32(c.Center.X), float32(c.Center.Y), float32(c.Radius), color, false)
-
 }

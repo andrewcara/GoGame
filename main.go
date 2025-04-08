@@ -12,12 +12,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
+	"github.com/hajimehoshi/ebiten/v2/text"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
 
 // Gravity is positve since "down" on the screen is positive and up is negative
 var gravity = linalg.Vector{X: 0, Y: 100.81}
 var id = uuid.New()
+var gameFont font.Face
 
 const (
 	physicsTickRate   = 1.0 / 100
@@ -28,7 +33,6 @@ const (
 	moveInputVelocity = 15
 	moveForce         = 500.0 // Base movement force
 	maxSpeed          = 200.0 // Maximum speed cap
-
 )
 
 type Game struct {
@@ -37,12 +41,33 @@ type Game struct {
 	accumulator    float64
 	lastUpdateTime time.Time
 	pressedKeys    []ebiten.Key
+	player1_score  int
+	player2_score  int
+}
+
+func initFont() font.Face {
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	const dpi = 72
+	fontFace, err := opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    24,
+		DPI:     dpi,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return fontFace
 }
 
 func NewGame() *Game {
+	// Initialize the font
+	gameFont = initFont()
 
-	//Initalize crossbars
-
+	// Initialize the world
 	world := initialization.Setup(screenWidth, screenHeight, gravity)
 
 	game := &Game{
@@ -50,6 +75,8 @@ func NewGame() *Game {
 		Collision:      false,
 		lastUpdateTime: time.Now(),
 		accumulator:    0,
+		player1_score:  0,
+		player2_score:  0,
 	}
 
 	// Add Physics Objects to Game
@@ -94,11 +121,9 @@ func (g *Game) HandleUserInput() {
 	player2_moves := player.PlayerMoves{Up: "W", Down: "S", Left: "A", Right: "D", PlayerID: 1}
 	g.HanlePlayerInput(player1_moves)
 	g.HanlePlayerInput(player2_moves)
-
 }
 
 func (g *Game) Update() error {
-
 	g.HandleUserInput()
 	currentTime := time.Now()
 	frameTime := currentTime.Sub(g.lastUpdateTime).Seconds()
@@ -120,8 +145,7 @@ func (g *Game) Update() error {
 	return nil
 }
 
-//Current implementation is that there must be two objects
-
+// Current implementation is that there must be two objects
 func (g *Game) UpdatePhysics(timeDelta float64) {
 	for i := 0; i < len(g.world.Objects); i++ {
 		for j := i + 1; j < len(g.world.Objects); j++ {
@@ -138,30 +162,33 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 			}
 			if !obj2.IsStatic {
 				obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta, gravity)
-
 			}
 		}
 	}
 }
 
-// Update positions
-
 func (g *Game) Draw(screen *ebiten.Image) {
-	color := color.RGBA{200, 150, 3, 255}
 
-	//We need to draw the net, the players and the ball
-
+	// Draw the objects
 	for _, obj := range g.world.Objects {
-		obj.Shape.DrawShape(screen, color)
+		obj.Shape.DrawShape(screen)
 	}
+
+	// Display score text
+	scoreText := "Score: " + string(rune('0'+g.player1_score)) + " - " + string(rune('0'+g.player2_score))
+	text.Draw(screen, scoreText, gameFont, screenWidth/2-100, 30, color.RGBA{255, 255, 255, 255})
+	// Draw game title
+	text.Draw(screen, "Head Soccer", gameFont, screenWidth/2-100, 60, color.RGBA{255, 255, 255, 255})
 }
 
 func main() {
+	// Create the game
 	game := NewGame()
+
 	ebiten.SetWindowSize(screenWidth*2, screenHeight*2)
-	ebiten.SetWindowTitle("Ebiten Test")
+	ebiten.SetWindowTitle("Head Soccer")
+
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
 	}
-
 }
