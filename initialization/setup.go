@@ -66,7 +66,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	ball := physics.PhysicsBody{
 		Shape: &shapes.Circle{
 			Center: linalg.Point{X: headsoccer_constants.SoccerBallStartingX, Y: headsoccer_constants.SoccerBallStartingY},
-			Radius: 15,
+			Radius: headsoccer_constants.BallRadius,
 		},
 		Dynamic: dynamics.DynamicProperties{
 			Velocity:     linalg.Vector{X: 0, Y: 0},

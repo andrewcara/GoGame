@@ -16,4 +16,8 @@ const (
 	Player2StartingX    = screenWidth / 3
 	Player2StartingY    = screenHeight / 2
 	GroundHeight        = 13
+	LeftGoalLine        = 50
+	RightGoalLine       = screenWidth - 50
+	NetHeight           = 75
+	BallRadius          = 15
 )

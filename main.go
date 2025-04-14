@@ -5,6 +5,7 @@ import (
 	headsoccer_constants "HeadSoccer/constants"
 	player "HeadSoccer/input"
 	linalg "HeadSoccer/math/helper"
+	"HeadSoccer/shapes"
 	"image/color"
 
 	"HeadSoccer/initialization"
@@ -12,7 +13,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/examples/resources/fonts"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
@@ -23,7 +23,6 @@ import (
 
 // Gravity is positve since "down" on the screen is positive and up is negative
 var gravity = linalg.Vector{X: 0, Y: 100.81}
-var id = uuid.New()
 var gameFont font.Face
 
 var imageGameBG = Sprites.CreateImage("background.png")
@@ -150,12 +149,43 @@ func (g *Game) Update() error {
 	return nil
 }
 
+func IsCircle(shape shapes.Shape) bool {
+	_, isCircle := shape.(*shapes.Circle)
+	return isCircle
+}
+
+func (g *Game) ResetPositions() {
+	g.world = initialization.Setup(screenWidth, screenHeight, gravity)
+}
+
+func IsGoal(ball_position linalg.Point, ball_radius float64, player1_score *int, player2_score *int) bool {
+
+	if (ball_position.X+ball_radius < headsoccer_constants.LeftGoalLine) && (ball_position.Y > screenHeight-headsoccer_constants.NetHeight) {
+		print("here")
+		*player1_score += 1
+		return true
+	}
+
+	if (ball_position.X-ball_radius > headsoccer_constants.RightGoalLine) && (ball_position.Y > screenHeight-headsoccer_constants.NetHeight) {
+		*player2_score += 1
+		print("here2")
+		return true
+	}
+
+	return false
+}
+
 // Current implementation is that there must be two objects
 func (g *Game) UpdatePhysics(timeDelta float64) {
 	for i := 0; i < len(g.world.Objects); i++ {
 		for j := i + 1; j < len(g.world.Objects); j++ {
+
 			obj1 := g.world.Objects[i]
 			obj2 := g.world.Objects[j]
+
+			if IsCircle(obj1.Shape) && IsGoal(obj1.Shape.GetCenter(), headsoccer_constants.BallRadius, &g.player1_score, &g.player2_score) {
+				g.ResetPositions()
+			}
 
 			if physics.CollisionOccurs(obj1, obj2) {
 				g.Collision = true
