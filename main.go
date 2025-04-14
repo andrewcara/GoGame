@@ -1,6 +1,8 @@
 package main
 
 import (
+	"HeadSoccer/Sprites"
+	headsoccer_constants "HeadSoccer/constants"
 	player "HeadSoccer/input"
 	linalg "HeadSoccer/math/helper"
 	"image/color"
@@ -24,6 +26,8 @@ var gravity = linalg.Vector{X: 0, Y: 100.81}
 var id = uuid.New()
 var gameFont font.Face
 
+var imageGameBG = Sprites.CreateImage("background.png")
+
 const (
 	physicsTickRate   = 1.0 / 100
 	screenWidth       = 600
@@ -33,6 +37,7 @@ const (
 	moveInputVelocity = 15
 	moveForce         = 500.0 // Base movement force
 	maxSpeed          = 200.0 // Maximum speed cap
+	ground            = screenHeight - headsoccer_constants.GroundHeight
 )
 
 type Game struct {
@@ -90,7 +95,7 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
 func (g *Game) HanlePlayerInput(player_moves player.PlayerMoves) {
 	player := &g.world.Objects[player_moves.PlayerID]
 	boundary := (*player).Shape.GetBoundaryPoints()
-	onGround := boundary.MaxY >= float64(screenHeight)-1
+	onGround := boundary.MaxY >= float64(ground)-1
 	g.pressedKeys = inpututil.AppendPressedKeys(g.pressedKeys[:0])
 	for _, key := range g.pressedKeys {
 		switch key.String() {
@@ -158,17 +163,34 @@ func (g *Game) UpdatePhysics(timeDelta float64) {
 				g.Collision = false
 			}
 			if !obj1.IsStatic {
-				obj1.UpdateKinematics(screenWidth, screenHeight, timeDelta, gravity)
+				obj1.UpdateKinematics(screenWidth, ground, timeDelta, gravity)
 			}
 			if !obj2.IsStatic {
-				obj2.UpdateKinematics(screenWidth, screenHeight, timeDelta, gravity)
+				obj2.UpdateKinematics(screenWidth, ground, timeDelta, gravity)
 			}
 		}
 	}
 }
 
-func (g *Game) Draw(screen *ebiten.Image) {
+func (g *Game) DrawBackground(screen *ebiten.Image) {
+	w, h := imageGameBG.Bounds().Dx(), imageGameBG.Bounds().Dy()
+	scaleW := screenWidth / float64(w)
+	scaleH := screenHeight / float64(h)
+	scale := scaleW
+	if scale < scaleH {
+		scale = scaleH
+	}
 
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(-float64(w)/2, -float64(h)/2)
+	op.GeoM.Scale(scale, scale)
+	op.GeoM.Translate(screenWidth/2, screenHeight/2)
+	op.Filter = ebiten.FilterLinear
+	screen.DrawImage(imageGameBG, op)
+}
+
+func (g *Game) Draw(screen *ebiten.Image) {
+	g.DrawBackground(screen)
 	// Draw the objects
 	for _, obj := range g.world.Objects {
 		obj.Shape.DrawShape(screen)

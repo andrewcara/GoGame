@@ -1,6 +1,7 @@
 package initialization
 
 import (
+	headsoccer_constants "HeadSoccer/constants"
 	linalg "HeadSoccer/math/helper"
 	dynamics "HeadSoccer/math/helper/dynamic_properties"
 	"HeadSoccer/math/helper/point"
@@ -10,7 +11,7 @@ import (
 )
 
 func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.PhysicsWorld {
-	crossbar1_center := linalg.Point{X: 25, Y: screenHeight - 77.5}
+	crossbar1_center := linalg.Point{X: 25, Y: screenHeight - 77.5 - headsoccer_constants.GroundHeight}
 	// Define vertices relative to center
 	crossbar1_vertices := []linalg.Point{
 		{X: 0, Y: screenHeight - 75},  // top left
@@ -21,7 +22,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	var crossbar1 shapes.Polygon
 	crossbar1.Initialize(crossbar1_center, crossbar1_vertices)
 	crossbar1.SetImage("left_net.png")
-	crossbar1.SetImageDimensions(80, 50, &point.Point{X: screenWidth - (50 / 2), Y: screenHeight - (80 / 2)})
+	crossbar1.SetImageDimensions(80, 50, &point.Point{X: screenWidth - (50 / 2), Y: screenHeight - (80 / 2) - headsoccer_constants.GroundHeight})
 	crossbarBody := physics.PhysicsBody{
 		Shape: &crossbar1,
 		Dynamic: dynamics.DynamicProperties{
@@ -35,7 +36,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 		IsStatic:            true,
 	}
 
-	crossbar2_center := linalg.Point{X: screenWidth - 25.5, Y: screenHeight - 77.5}
+	crossbar2_center := linalg.Point{X: screenWidth - 25.5, Y: screenHeight - 77.5 - headsoccer_constants.GroundHeight}
 	// Define vertices relative to center
 	crossbar2_vertices := []linalg.Point{
 		{X: screenWidth - 1, Y: screenHeight - 75},  // top left
@@ -46,7 +47,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	var crossbar2 shapes.Polygon
 	crossbar2.Initialize(crossbar2_center, crossbar2_vertices)
 	crossbar2.SetImage("right_net.png")
-	crossbar2.SetImageDimensions(80, 50, &point.Point{X: (50 / 2), Y: screenHeight - (80 / 2)})
+	crossbar2.SetImageDimensions(80, 50, &point.Point{X: (50 / 2), Y: screenHeight - (80 / 2) - headsoccer_constants.GroundHeight})
 
 	crossbarBody2 := physics.PhysicsBody{
 		Shape: &crossbar2,
@@ -64,7 +65,7 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	// Ball initialization - centered more visibly
 	ball := physics.PhysicsBody{
 		Shape: &shapes.Circle{
-			Center: linalg.Point{X: screenWidth / 2, Y: screenHeight / 2},
+			Center: linalg.Point{X: headsoccer_constants.SoccerBallStartingX, Y: headsoccer_constants.SoccerBallStartingY},
 			Radius: 15,
 		},
 		Dynamic: dynamics.DynamicProperties{
@@ -81,13 +82,13 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 	ball.Shape.SetImage("soccer_ball.png")
 
 	// Player 1 - Left side of screen
-	player1Center := linalg.Point{X: 400, Y: 400}
+	player1Center := linalg.Point{X: headsoccer_constants.Player1StartingX, Y: headsoccer_constants.Player1StartingY}
 	// Define vertices relative to center
-	vertices1 := []linalg.Point{
-		{X: 390, Y: 390}, // top left
-		{X: 390, Y: 410}, // top right
-		{X: 410, Y: 410}, // bottom left
-		{X: 410, Y: 390}, // bottom right
+	var vertices1 = []linalg.Point{
+		{X: headsoccer_constants.Player1StartingX - 10, Y: headsoccer_constants.Player1StartingY - 10}, // top left
+		{X: headsoccer_constants.Player1StartingX - 10, Y: headsoccer_constants.Player1StartingY + 10}, // top right
+		{X: headsoccer_constants.Player1StartingX + 10, Y: headsoccer_constants.Player1StartingY + 10}, // bottom left
+		{X: headsoccer_constants.Player1StartingX + 10, Y: headsoccer_constants.Player1StartingY - 10}, // bottom right
 	}
 	var polygon1 shapes.Polygon
 	polygon1.Initialize(player1Center, vertices1)
@@ -107,13 +108,13 @@ func Setup(screenWidth, screenHeight float64, gravity linalg.Vector) physics.Phy
 		IsStatic:            false,
 	}
 
-	player2Center := linalg.Point{X: 120, Y: 120}
+	player2Center := linalg.Point{X: headsoccer_constants.Player2StartingX, Y: headsoccer_constants.Player2StartingY}
 	// Define vertices relative to center
-	vertices2 := []linalg.Point{
-		{X: 110, Y: 110}, // top left
-		{X: 110, Y: 130}, // top right
-		{X: 130, Y: 130}, // bottom left
-		{X: 130, Y: 110}, // bottom right
+	var vertices2 = []linalg.Point{
+		{X: headsoccer_constants.Player2StartingX - 10, Y: headsoccer_constants.Player2StartingY - 10}, // top left
+		{X: headsoccer_constants.Player2StartingX - 10, Y: headsoccer_constants.Player2StartingY + 10}, // top right
+		{X: headsoccer_constants.Player2StartingX + 10, Y: headsoccer_constants.Player2StartingY + 10}, // bottom left
+		{X: headsoccer_constants.Player2StartingX + 10, Y: headsoccer_constants.Player2StartingY - 10}, // bottom right
 	}
 	var polygon2 shapes.Polygon
 	polygon2.Initialize(player2Center, vertices2)
